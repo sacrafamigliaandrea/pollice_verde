@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta property="og:title" content="Pollice Verde! — il coding del giardino">
+<meta property="og:description" content="Diventa giardiniere-programmatore: insegna a Gaia le tue mosse, ripetile e cura il verde della scuola. 16 livelli da sbloccare!">
+<meta property="og:type" content="website">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pollice Verde! — il coding del giardino</title>
+<!--
+  POLLICE VERDE! — coding a "tartaruga" (linguaggio italiano): lo studente cura
+  il verde della scuola guidando la giardiniera Gaia su una griglia. Concetto
+  chiave nuovo della serie: le PROCEDURE (impara una mossa e richiamala), oltre
+  a ripeti e se gia' noti. Quinto gioco dopo Controcorrente, Rocca Cifrata,
+  Il Fontaniere e Coach!. Progettazione A. Cerioli.
+  Single file, vanilla HTML/CSS/JS. Motore verificato in Node.
+  Nessun localStorage (Mac di laboratorio condivisi): progressi in memoria,
+  azzerati a ogni riaccesso, piu' codici di avanzamento.
+  Scaffolding: zone 1-2 con comandi espliciti nelle consegne; zone 3-4 solo
+  indicazioni. Sblocco docente: 5 tap sul logo. Deep link: ?livello=N.
+  Musica YouTube opzionale (lista MUSICHE).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --verde:#2F8F4E; --verde-scuro:#1E6B38; --verde-chiaro:#E4F2E2;
+  --prato:#7FB069; --prato-scuro:#5E9047;
+  --rosso:#C8281E; --rosso-scuro:#9A1C13;
+  --arancio:#E07B1E; --arancio-scuro:#A8540C;
+  --oro:#E0A21E; --azzurro:#3E7CB1;
+  --crema:#FBF8EE; --sabbia:#F1F5EA; --bordo:#D7E2C8;
+  --inchiostro:#23311F; --grigio:#7c8a6f;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Atkinson Hyperlegible',sans-serif;background:var(--sabbia);color:var(--inchiostro);overflow:hidden}
+h1,h2,h3,.display{font-family:'Fredoka',sans-serif;font-weight:600}
+button{font-family:'Fredoka',sans-serif;cursor:pointer;border:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--arancio);outline-offset:2px}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.attiva{display:flex}
+.spazio{flex:1}
+
+/* ===== SPLASH ===== */
+#splash{align-items:center;justify-content:center;text-align:center;padding:18px;overflow:hidden;background:radial-gradient(circle at 50% 14%,#A9D9F0 0%,#7FB069 46%,#3E7A38 100%)}
+#splash .pannello{position:relative;display:flex;flex-direction:column;overflow:hidden;background:rgba(20,44,22,.62);border:2px solid rgba(255,255,255,.20);border-radius:26px;width:100%;max-width:1340px;max-height:calc(100vh - 28px);text-align:left}
+.hero{position:relative;display:block;min-height:0;border-bottom:3px solid rgba(255,255,255,.22);background:#bfe6c8}
+.hero svg,.hero img{display:block;width:100%;height:auto}
+.hero-overlay{position:absolute;left:0;right:0;top:0;padding:26px 34px 64px;background:linear-gradient(to bottom,rgba(12,40,16,.66) 0%,rgba(12,40,16,.30) 55%,transparent 100%);pointer-events:none}
+#splash .hero-body{padding:18px 28px 22px;overflow:auto}
+@media(min-width:880px){
+ #splash .pannello{flex-direction:row;align-items:stretch}
+ .hero{flex:1 1 54%;min-width:0;border-bottom:0;border-right:3px solid rgba(255,255,255,.22);display:flex;align-items:stretch}
+ .hero svg,.hero img{height:100%;width:100%;object-fit:cover}
+ #splash .hero-body{flex:1 1 46%;display:flex;flex-direction:column;justify-content:center;padding:24px 30px}
+ #splash .hero-body p{margin-top:10px}
+ .btn-big{margin-top:16px;align-self:flex-start}
+ .splash-foot{margin-top:14px}
+}
+#splash .occhiello{color:#DFF7CF;font-family:'Fredoka',sans-serif;font-size:1.28rem;margin-bottom:3px;letter-spacing:.02em;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+#splash h1{font-size:clamp(3rem,8vw,5rem);color:#fff;font-weight:700;text-shadow:0 2px 10px rgba(0,0,0,.6),0 3px 0 rgba(0,0,0,.25)}
+#splash p{color:#EFFae6;margin-top:16px;line-height:1.5;font-size:1.18rem}
+.splash-gaia{display:flex;align-items:center;gap:14px;margin:16px 0 4px}
+.splash-gaia .av{flex:none}
+.splash-gaia .gaia-av{width:66px;height:66px}
+.splash-gaia .fumetto{position:relative;background:rgba(255,255,255,.96);color:#1E5A2E;border-radius:16px;padding:13px 18px;font-size:1.16rem;line-height:1.45}
+.splash-gaia .fumetto::before{content:'';position:absolute;left:-8px;top:22px;border:8px solid transparent;border-right-color:rgba(255,255,255,.96);border-left:0}
+.btn-big{margin-top:20px;background:var(--verde);color:#fff;font-size:1.5rem;font-weight:600;padding:18px 48px;border-radius:999px;box-shadow:0 4px 0 var(--verde-scuro);transition:transform .08s}
+.btn-big:active{transform:translateY(3px);box-shadow:0 1px 0 var(--verde-scuro)}
+.splash-foot{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.18)}
+.splash-foot img{height:60px;border-radius:9px;background:#fff;padding:3px}
+.splash-foot .cr{color:#E2F0D8;font-size:.92rem;line-height:1.45;font-family:'Fredoka',sans-serif}
+.splash-foot .cr strong{color:#fff}
+
+/* ===== TOP BAR ===== */
+.testa{display:flex;align-items:center;gap:12px;padding:9px 16px;background:var(--verde);color:#fff;flex-wrap:wrap}
+.testa h1{font-size:1.18rem}
+.logo-ball{width:38px;height:38px;border-radius:50%;cursor:pointer;flex:none;border:2px solid #fff;background:var(--verde-scuro);display:inline-flex;align-items:center;justify-content:center;overflow:hidden}
+.logo-foto{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+.btn-testa{background:rgba(255,255,255,.94);color:var(--verde-scuro);border-radius:999px;padding:7px 16px;font-size:.9rem;font-weight:600}
+.btn-musica{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border-radius:50%;background:rgba(255,255,255,.18);border:1.6px solid rgba(255,255,255,.55)}
+.btn-musica svg{display:block}
+.btn-musica.on{background:#fff;border-color:#fff}
+.badge-docente{background:var(--oro);color:#4a3500;border-radius:999px;padding:6px 14px;font-weight:600;font-size:.85rem;display:none}
+
+/* ===== MAPPA ===== */
+#mappa{background:var(--sabbia)}
+.mappa-corpo{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:0 0 18px}
+.banner-int{width:100%;height:150px;flex:none;overflow:hidden;display:block;border-bottom:4px solid var(--verde)}
+.banner-int svg,.banner-int img{display:block;width:100%;height:150px !important;object-fit:cover;object-position:center 38%}
+.mappa-inner{width:min(1000px,100%);padding:16px;display:flex;flex-direction:column;gap:16px}
+.zona{background:#fff;border:2px solid var(--bordo);border-radius:18px;padding:14px 16px;box-shadow:0 6px 18px rgba(60,110,40,.10)}
+.zona-titolo{display:flex;align-items:center;gap:10px;font-family:'Fredoka',sans-serif;font-weight:700;color:var(--verde-scuro);font-size:1.05rem;margin-bottom:12px}
+.zona-num{background:var(--verde);color:#fff;border-radius:8px;font-size:.78rem;padding:3px 9px}
+.zona-griglia{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:560px){.zona-griglia{grid-template-columns:repeat(2,1fr)}}
+.nodo{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;padding:6px 4px;border-radius:14px}
+.nodo .palla{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.5rem;color:#fff;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.2);background:radial-gradient(circle at 38% 32%,#5BD487,#2F8F4E 60%,#1E6B38)}
+.nodo.bloccato .palla{background:#b4c2a6;color:#fff;box-shadow:none}
+.nodo.bloccato{cursor:default}
+.nodo.completato .palla{background:radial-gradient(circle at 38% 32%,#F6C25A,#E0A21E 60%,#A8540C)}
+.nodo:not(.bloccato){cursor:pointer;transition:transform .12s}
+.nodo:not(.bloccato):hover{transform:translateY(-3px)}
+.nodo.corrente .palla{box-shadow:0 0 0 4px var(--oro),0 4px 10px rgba(0,0,0,.2);animation:pulsa 1.5s ease-in-out infinite}
+@keyframes pulsa{50%{box-shadow:0 0 0 7px rgba(224,162,30,.5),0 4px 10px rgba(0,0,0,.2)}}
+.nodo .nome{font-size:.74rem;text-align:center;line-height:1.15;color:var(--inchiostro);max-width:88px}
+.nodo .stelline{display:flex;gap:2px;height:12px}
+.nodo .stelline i{width:10px;height:10px;border-radius:50%;background:#d3e0c4;display:inline-block}
+.nodo .stelline i.on{background:var(--verde)}
+.mappa-piedi{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:4px}
+.codice-box{display:flex;gap:8px;align-items:center;background:#fff;border:2px solid var(--bordo);border-radius:999px;padding:5px 6px 5px 16px}
+.codice-box input{border:none;background:none;font-family:'Fredoka',sans-serif;font-size:.95rem;text-transform:uppercase;width:170px;color:var(--inchiostro)}
+.codice-box button{background:var(--verde);color:#fff;border-radius:999px;padding:7px 16px;font-weight:600}
+
+/* ===== LIVELLO ===== */
+#livello{background:var(--sabbia)}
+.lv-testa{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--verde);color:#fff;flex-wrap:wrap}
+.lv-testa .titolo-lv{font-family:'Fredoka',sans-serif;font-weight:600;font-size:1.05rem}
+.lv-testa .zona-lv{font-size:.78rem;opacity:.85;font-family:'Fredoka',sans-serif}
+.lv-corpo{flex:1;display:grid;grid-template-columns:50% 50%;min-height:0}
+.colonna-stage{display:flex;flex-direction:column;min-height:0;border-right:2px solid var(--bordo);background:#fff}
+.consegna{padding:10px 14px;background:var(--verde-chiaro);border-bottom:2px solid var(--bordo);font-size:.88rem;line-height:1.4;overflow:auto;max-height:170px;flex:none}
+.consegna strong{color:var(--verde-scuro)}
+.court-head{padding:6px 14px;background:#fff;border-bottom:2px solid var(--bordo);font-family:'Fredoka',sans-serif;font-size:.9rem;color:var(--verde-scuro);text-align:center}
+.court-head strong{font-size:1.05rem}
+.stage-box{flex:1;min-height:240px;position:relative;display:flex;align-items:stretch;justify-content:center;background:#cfe8c2}
+.stage-box svg{width:100%;height:100%}
+.colonna-codice{display:flex;flex-direction:column;min-height:0;background:var(--crema)}
+.palette{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;border-bottom:2px solid var(--bordo);background:#fff;align-items:center}
+.eti-pal{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--grigio);width:100%;font-family:'Fredoka',sans-serif}
+.chip-cmd{background:var(--verde-chiaro);color:var(--verde-scuro);border:1.5px solid var(--verde);border-radius:8px;padding:4px 10px;font-size:.85rem;font-family:Menlo,Consolas,monospace;font-weight:600}
+.chip-cmd:active{background:var(--verde);color:#fff}
+.chip-cmd.nuovo{background:#FFF1DC;border-color:var(--arancio);color:var(--arancio-scuro)}
+.editor-area{flex:1;display:flex;min-height:0}
+.numeri{background:#E9EFD9;color:#9aab86;font-family:Menlo,Consolas,monospace;font-size:.95rem;line-height:1.5;padding:12px 6px 12px 0;text-align:right;min-width:38px;user-select:none;overflow:hidden;white-space:pre}
+#codice{flex:1;border:none;resize:none;background:var(--crema);font-family:Menlo,Consolas,monospace;font-size:.95rem;line-height:1.5;padding:12px;color:var(--inchiostro);white-space:pre;overflow:auto}
+.barra-azioni{display:flex;gap:8px;padding:10px 12px;border-top:2px solid var(--bordo);background:#fff;align-items:center;flex-wrap:wrap}
+.btn-esegui{background:var(--verde);color:#fff;font-size:1.05rem;font-weight:600;padding:10px 26px;border-radius:12px;box-shadow:0 3px 0 var(--verde-scuro)}
+.btn-esegui:active{transform:translateY(2px);box-shadow:0 1px 0 var(--verde-scuro)}
+.btn-esegui[disabled]{opacity:.55;box-shadow:none}
+.btn-sec{background:#fff;border:2px solid var(--bordo);color:var(--inchiostro);padding:9px 16px;border-radius:12px;font-weight:500;font-size:.9rem}
+.btn-sol{background:#fff;border:2px dashed var(--oro);color:var(--arancio-scuro);padding:9px 14px;border-radius:12px;font-weight:600;font-size:.85rem;display:none}
+.feedback{padding:10px 14px;font-size:.9rem;line-height:1.4;border-top:2px solid var(--bordo);display:none;max-height:30%;overflow:auto}
+.feedback.rosso{display:block;background:#FCE7E3;color:#7a1810;border-top-color:var(--rosso)}
+.feedback.verde{display:block;background:#E6F6EC;color:#177a3e;border-top-color:var(--verde)}
+
+/* parla / gaia */
+.parla{display:flex;gap:10px;align-items:flex-start;margin-top:6px}
+.parla .av{flex:none}
+.parla .nome-gaia{display:block;font-family:'Fredoka',sans-serif;font-weight:600;font-size:.78rem;color:var(--verde-scuro);margin-bottom:2px}
+.gaia-av{border-radius:50%;background:#E8F4DC;box-shadow:0 2px 6px rgba(0,0,0,.18);display:inline-block;vertical-align:middle}
+.gaia-foto{object-fit:cover;object-position:center top}
+.guida-foto{float:right;width:148px;max-width:38%;border-radius:14px;margin:0 0 10px 16px;box-shadow:0 4px 12px rgba(0,0,0,.18);border:3px solid #fff}
+.fact{margin-top:9px;padding:8px 11px;background:#FFF6E6;border-left:3px solid var(--oro);border-radius:6px;font-size:.83rem;line-height:1.55}
+.fact strong{color:var(--arancio-scuro)}
+.consegna code,.scheda code{background:#23311F;color:#CFEFB0;border-radius:5px;padding:1px 6px;font-size:.8rem;font-family:Menlo,Consolas,monospace;white-space:nowrap}
+
+/* token animation */
+#giardino .tok{transition:transform .42s cubic-bezier(.45,.05,.35,1)}
+#giardino .noanim .tok{transition:none !important}
+.garden-pop{opacity:0;font-family:'Fredoka',sans-serif;font-size:26px;font-weight:700;fill:#fff;paint-order:stroke;stroke:#1E6B38;stroke-width:5px;pointer-events:none;transition:opacity .18s}
+.garden-pop.show{opacity:1}
+
+/* overlay */
+.overlay{position:absolute;inset:0;background:rgba(16,38,18,.66);display:none;align-items:center;justify-content:center;z-index:40;padding:18px}
+.overlay.attiva{display:flex}
+.scheda{background:var(--crema);border-radius:20px;max-width:560px;width:100%;max-height:92%;overflow:auto;padding:26px 28px;border:3px solid var(--verde);box-shadow:0 16px 60px rgba(0,0,0,.4);text-align:center}
+.scheda h2{color:var(--verde-scuro);font-size:1.5rem;margin-bottom:8px}
+.scheda h3{color:var(--verde-scuro);font-size:1.05rem;margin:16px 0 6px;text-align:left}
+.scheda p,.scheda li{font-size:.94rem;line-height:1.55;text-align:left}
+.scheda ul{padding-left:20px}
+.codeblock{background:#23311F;color:#DCF3C4;font-family:Menlo,Consolas,monospace;font-size:.84rem;border-radius:10px;padding:12px 14px;margin:8px 0;white-space:pre;overflow-x:auto;line-height:1.55;text-align:left}
+.riga-bottoni{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.stelle-box{display:flex;justify-content:center;gap:12px;margin:14px 0}
+.dato-vittoria{display:flex;justify-content:space-between;background:#fff;border:2px solid var(--bordo);border-radius:10px;padding:8px 14px;margin:6px 0;font-size:.94rem}
+.dato-vittoria strong{font-family:'Fredoka',sans-serif}
+.codice-vittoria{background:var(--verde-scuro);color:#fff;border-radius:12px;padding:12px 16px;text-align:center;margin-top:12px;font-size:.9rem}
+.codice-vittoria .parola{font-family:'Fredoka',sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:.18em;margin-top:4px}
+.parla-vittoria{max-width:430px;margin:12px auto 0}
+@media (prefers-reduced-motion:reduce){#giardino .tok{transition:none}.nodo.corrente .palla{animation:none}}
+@media (max-width:880px){
+  .lv-corpo{grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow:auto}
+  .colonna-stage{border-right:none;border-bottom:2px solid var(--bordo)}
+  .consegna{max-height:150px}
+}
+
+/* ===== PREMI ===== */
+.bacheca{background:linear-gradient(135deg,#fff,#FFF6E6);border:2px dashed var(--oro);border-radius:18px;padding:14px 16px;box-shadow:0 6px 18px rgba(60,110,40,.10)}
+.bacheca .zona-num{background:var(--oro);color:#4a3500}
+.premio-griglia{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:560px){.premio-griglia{grid-template-columns:1fr}}
+.trofeo{display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;background:#fff;border:2px solid var(--bordo);border-radius:14px;padding:14px 10px;cursor:pointer;transition:transform .12s}
+.trofeo:not(.bloccato):hover{transform:translateY(-3px)}
+.trofeo.bloccato{cursor:default;opacity:.65}
+.trofeo .medaglia{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%,#7FD9A0,#2F8F4E 65%,#1E6B38);box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.trofeo.bloccato .medaglia{background:#b4c2a6;box-shadow:none}
+.trofeo .medaglia svg{width:30px;height:30px}
+.trofeo .tit-premio{font-family:'Fredoka',sans-serif;font-weight:600;font-size:.92rem;color:var(--verde-scuro);line-height:1.15}
+.trofeo .sot-premio{font-size:.72rem;color:var(--grigio)}
+#premio .testa{background:var(--verde-scuro)}
+.premio-corpo{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:0 0 28px}
+.premio-inner{width:min(820px,100%);padding:18px;display:flex;flex-direction:column;gap:16px}
+.premio-hero{display:flex;gap:16px;align-items:center;background:#fff;border:2px solid var(--bordo);border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(60,110,40,.10)}
+.premio-hero .pr-illo{width:118px;height:118px;border-radius:14px;flex:none;border:3px solid var(--oro);overflow:hidden}
+.premio-hero .occhiello-pr{color:var(--arancio-scuro);font-family:'Fredoka',sans-serif;font-size:.78rem;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.premio-hero h2{color:var(--verde-scuro);font-family:'Fredoka',sans-serif;font-size:1.4rem;margin-bottom:6px}
+.premio-hero p{font-size:.95rem;line-height:1.5}
+@media (max-width:560px){.premio-hero{flex-direction:column;text-align:center}}
+.cmap{display:flex;flex-direction:column;align-items:center;background:#fff;border:2px solid var(--bordo);border-radius:18px;padding:20px 16px}
+.cmap-centro{background:var(--verde);color:#fff;font-family:'Fredoka',sans-serif;font-weight:700;font-size:1.05rem;padding:10px 24px;border-radius:999px;box-shadow:0 4px 0 var(--verde-scuro);letter-spacing:.02em}
+.cmap-link{width:3px;height:22px;background:var(--oro)}
+.cmap-rami{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%}
+@media (max-width:620px){.cmap-rami{grid-template-columns:1fr}}
+.cmap-ramo{background:var(--crema);border:2px solid var(--oro);border-radius:14px;padding:12px 14px;text-align:left}
+.cmap-ramo h4{font-family:'Fredoka',sans-serif;color:var(--arancio-scuro);font-size:1rem;margin-bottom:4px}
+.cmap-ramo p{font-size:.86rem;line-height:1.5}
+.valori-griglia{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media (max-width:560px){.valori-griglia{grid-template-columns:1fr}}
+.valore{background:#fff;border:2px solid var(--bordo);border-radius:14px;padding:12px 14px;border-left:5px solid var(--verde)}
+.valore h4{font-family:'Fredoka',sans-serif;color:var(--verde-scuro);font-size:.98rem;margin-bottom:3px}
+.valore p{font-size:.85rem;line-height:1.45}
+.premio-testo{background:#FFF6E6;border-left:4px solid var(--oro);border-radius:8px;padding:14px 16px;font-size:.95rem;line-height:1.6}
+.premio-testo strong{color:var(--arancio-scuro)}
+.premio-pie{display:flex;justify-content:center;gap:10px;margin-top:4px}
+
+/* ===== strato narrativo ===== */
+.zona-cap{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.zona-thumb{width:62px;height:62px;border-radius:14px;flex:none;border:2.5px solid var(--oro);box-shadow:0 3px 8px rgba(60,110,40,.18);overflow:hidden;background:#E8F4DC}
+.zona-thumb svg{display:block;width:100%;height:100%}
+.zona-cap-txt{flex:1;min-width:0}
+.zona-cap .capitolo{font-family:'Fredoka',sans-serif;font-weight:700;color:var(--arancio-scuro);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.zona-cap .zona-titolo{margin-bottom:3px}
+.zona-cap .racconto{font-size:.82rem;line-height:1.35;color:var(--grigio)}
+.bacheca .zona-cap .capitolo{color:#9A6a10}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH ===== -->
+<div class="screen attiva" id="splash">
+  <div class="pannello">
+    <div class="hero" id="splash-hero"></div>
+    <div class="hero-body">
+    <div class="occhiello">serie del coding &middot; gioco 5</div>
+    <h1>Pollice Verde!</h1>
+    <p>Cura il verde della scuola guidando la giardiniera Gaia. Non lavori tu: le <strong>insegni le tue mosse</strong>, le ripeti e fai fiorire aiuole, siepi e i campi da gioco.</p>
+    <div class="splash-gaia">
+      <span class="av" id="splash-av"></span>
+      <div class="fumetto">«Ciao, sono <strong>Gaia</strong>! Io faccio esattamente quello che mi scrivi, un passo alla volta. Insieme avremo il pollice verde piu' verde della scuola!»</div>
+    </div>
+    <button class="btn-big" id="btn-gioca">Entra in giardino</button>
+    <div class="splash-foot">
+      <img src="logoscuolarosso.jpg" alt="Scuola Sacra Famiglia" onerror="this.style.display='none'">
+      <div class="cr"><strong>Scuola Sacra Famiglia</strong> &middot; Orzinuovi (BS)<br>&copy; 2026 Andrea Cerioli &mdash; Animatore Digitale<br>Serie del coding &middot; gioco 5</div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAPPA ===== -->
+<div class="screen" id="mappa">
+  <div class="testa">
+    <span class="logo-ball" id="logo-ball"></span>
+    <h1>Il Giardino della Scuola</h1>
+    <span class="badge-docente" id="badge-docente">modalità docente</span>
+    <span class="spazio"></span>
+    <button class="btn-musica" aria-label="musica on/off" title="musica"></button>
+    <button class="btn-testa" id="btn-docente">Per il docente</button>
+  </div>
+  <div class="mappa-corpo">
+    <div class="banner-int" id="banner-int"></div>
+    <div class="mappa-inner">
+      <div id="zone"></div>
+      <div class="mappa-piedi">
+        <div class="codice-box">
+          <input id="input-codice" placeholder="codice del giardino" maxlength="14">
+          <button id="btn-codice">Entra</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LIVELLO ===== -->
+<div class="screen" id="livello">
+  <div class="lv-testa">
+    <span class="logo-ball" id="logo-ball2"></span>
+    <div>
+      <div class="titolo-lv" id="lv-titolo">—</div>
+      <div class="zona-lv" id="lv-zona">—</div>
+    </div>
+    <span class="spazio"></span>
+    <button class="btn-musica" aria-label="musica on/off" title="musica"></button>
+  </div>
+  <div class="lv-corpo">
+    <div class="colonna-stage">
+      <div class="consegna" id="lv-brief">—</div>
+      <div class="court-head">Giardino curato: <strong id="score">0 / 1</strong></div>
+      <div class="stage-box" id="stage"></div>
+    </div>
+    <div class="colonna-codice">
+      <div class="palette" id="palette"></div>
+      <div class="editor-area">
+        <div class="numeri" id="numeri">1</div>
+        <textarea id="codice" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="scrivi qui le mosse per Gaia..."></textarea>
+      </div>
+      <div id="feedback" class="feedback"></div>
+      <div class="barra-azioni">
+        <button class="btn-esegui" id="btn-esegui">Vai, Gaia!</button>
+        <button class="btn-sec" id="btn-reset">Pulisci</button>
+        <button class="btn-sec" id="btn-guida">Come si gioca</button>
+        <button class="btn-sol" id="btn-sol">Soluzione</button>
+        <span class="spazio"></span>
+        <button class="btn-sec" id="btn-mappa-da-lv">Il giardino</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PREMIO ===== -->
+<div class="screen" id="premio">
+  <div class="testa">
+    <span class="logo-ball"></span>
+    <h1 id="premio-titolo">Premio</h1>
+    <span class="spazio"></span>
+    <button class="btn-testa" id="btn-premio-mappa">Il giardino</button>
+  </div>
+  <div class="premio-corpo">
+    <div class="premio-inner" id="premio-inner"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-vittoria"><div class="scheda" id="scheda-vittoria"></div></div>
+<div class="overlay" id="overlay-guida"><div class="scheda" id="scheda-guida"></div></div>
+
+<!-- ============================================================ -->
+<!-- MOTORE (verificato in Node) -->
+<!-- ============================================================ -->
+<script>
+// ============================================================
+// POLLICE VERDE! - motore del gioco di coding del verde
+// Giardiniera "tartaruga" su griglia (COLS x ROWS).
+// Heading: 0=Nord(su) 1=Est 2=Sud 3=Ovest.
+// Linguaggio in italiano. Verificato in Node.
+// Concetto chiave: le PROCEDURE (impara una mossa, poi richiamala).
+// ============================================================
+(function(global){
+'use strict';
+
+const HEAD = [ [0,-1], [1,0], [0,1], [-1,0] ]; // su, est, giu, ovest
+const RES = { avanza:1, gira:1, pianta:1, innaffia:1, taglia:1, traccia:1, ripeti:1, se:1, impara:1, destra:1, sinistra:1, libero:1, erba:1, vuoto:1, secco:1 };
+const ATTI = { pianta:'fiore', innaffia:'acqua', taglia:'taglio', traccia:'riga' };
+const COND = { libero:1, erba:1, vuoto:1, secco:1 };
+
+function err(line, message){ const e = new Error(message); e.line = line; e.didactic = true; return e; }
+const isNome = s => /^[a-zàèéìòùA-ZÀÈÉÌÒÙ][a-zàèéìòùA-ZÀÈÉÌÒÙ0-9]*$/.test(s);
+
+// ---- parser (blocchi a rientro di 2 spazi, come ripeti/se/impara) ----
+function parseProgram(src){
+  const rawLines = src.split('\n');
+  const prog = [];
+  const stack = [{indent:-2, body:prog}];
+  for(let i=0;i<rawLines.length;i++){
+    const lineNo = i+1;
+    let line = rawLines[i].replace(/\t/g,'  ');
+    if(!line.trim()) continue;
+    const indent = line.length - line.trimStart().length;
+    if(indent % 2 !== 0) throw err(lineNo, "il rientro deve essere di 2 spazi alla volta");
+    const txt = line.trim().toLowerCase();
+    while(stack.length>1 && indent <= stack[stack.length-1].indent){
+      const fr = stack.pop();
+      if(fr.body.length===0) throw err(fr.line, 'dopo "'+fr.kw+'" serve almeno una riga rientrata di 2 spazi');
+    }
+    const parent = stack[stack.length-1];
+    const expected = parent.indent + 2;
+    if(indent > expected) throw err(lineNo, "rientro troppo profondo: togli qualche spazio");
+    if(indent === expected && stack.length===1 && indent>0) throw err(lineNo, "questa riga e' rientrata ma sopra non c'e' un ripeti, un se o un impara");
+    const tok = txt.split(/\s+/);
+    const st = parseStatement(tok, lineNo);
+    if(st.type==='impara' && stack.length>1) throw err(lineNo, 'le nuove mosse (impara) si scrivono a sinistra, senza rientro');
+    parent.body.push(st);
+    if(st.type==='ripeti' || st.type==='se' || st.type==='impara'){
+      const kw = st.type==='ripeti'?('ripeti '+st.n):(st.type==='se'?('se '+st.cond):('impara '+st.name));
+      stack.push({indent:indent, body:st.body, line:lineNo, kw:kw});
+    }
+  }
+  while(stack.length>1){
+    const fr = stack.pop();
+    if(fr.body.length===0) throw err(fr.line, 'dopo "'+fr.kw+'" serve almeno una riga rientrata di 2 spazi');
+  }
+  // separa procedure e programma principale
+  const procs = {}; const main = [];
+  for(const n of prog){
+    if(n.type==='impara'){
+      if(procs[n.name]) throw err(n.line, 'hai gia\' insegnato la mossa "'+n.name+'"');
+      if(RES[n.name]) throw err(n.line, '"'+n.name+'" e\' gia\' un comando: scegli un altro nome per la tua mossa');
+      procs[n.name] = n.body;
+    } else main.push(n);
+  }
+  validateCalls(main, procs);
+  for(const k in procs) validateCalls(procs[k], procs);
+  return { main, procs };
+}
+
+function validateCalls(stmts, procs){
+  for(const s of stmts){
+    if(s.type==='call' && !procs[s.name]) throw err(s.line, 'non conosci la mossa "'+s.name+'": insegnala prima con "impara '+s.name+'"');
+    if(s.body) validateCalls(s.body, procs);
+  }
+}
+
+function parseStatement(tok, line){
+  const cmd = tok[0];
+  switch(cmd){
+    case 'avanza':
+      if(tok.length>1) throw err(line, 'un passo alla volta: scrivi solo "avanza"');
+      return {type:'avanza', line};
+    case 'gira': {
+      if(!tok[1]) throw err(line, 'gira da che parte? Scrivi "gira destra" o "gira sinistra"');
+      if(tok[1]!=='destra' && tok[1]!=='sinistra') throw err(line, '"'+tok[1]+'" non va bene: si gira "destra" o "sinistra"');
+      return {type:'gira', verso:tok[1], line};
+    }
+    case 'pianta': case 'innaffia': case 'taglia': case 'traccia':
+      if(tok.length>1) throw err(line, '"'+cmd+'" si scrive da solo, senza altro');
+      return {type:cmd, line};
+    case 'ripeti': {
+      const n = Number(tok[1]);
+      if(!tok[1] || !Number.isInteger(n) || n<1) throw err(line, 'ripeti quante volte? Serve un numero, ad esempio "ripeti 3"');
+      if(n>40) throw err(line, 'massimo "ripeti 40"');
+      return {type:'ripeti', n, body:[], line};
+    }
+    case 'se': {
+      const c = tok[1];
+      if(!c) throw err(line, 'se che cosa? Le condizioni sono: libero, erba, vuoto, secco');
+      if(!COND[c]) throw err(line, '"'+c+'" non e\' una condizione. Le condizioni sono: libero, erba, vuoto, secco');
+      return {type:'se', cond:c, body:[], line};
+    }
+    case 'impara': {
+      const nome = tok[1];
+      if(!nome) throw err(line, 'impara quale mossa? Dalle un nome, ad esempio "impara aiuola"');
+      if(!isNome(nome)) throw err(line, 'il nome della mossa deve essere una parola sola (lettere), ad esempio "aiuola"');
+      if(tok.length>2) throw err(line, 'una mossa ha un nome solo: scrivi "impara '+nome+'"');
+      return {type:'impara', name:nome, body:[], line};
+    }
+    default: {
+      if(tok.length>1) throw err(line, 'non ho capito la riga "'+tok.join(' ')+'"');
+      if(!isNome(cmd)) throw err(line, 'comando sconosciuto "'+cmd+'"');
+      return {type:'call', name:cmd, line};
+    }
+  }
+}
+
+// ---- stato ----
+function key(c,r){ return c+','+r; }
+function newState(level){
+  const obst = {}; (level.obstacles||[]).forEach(([c,r])=>obst[key(c,r)]=true);
+  const marks = {}; // chiave -> Set di tipi gia' presenti (pre-piantati)
+  (level.preset||[]).forEach(([c,r,t])=>{ const k=key(c,r); (marks[k]||(marks[k]=new Set())).add(t); });
+  return {
+    cols: level.cols, rows: level.rows,
+    g: { c:level.start[0], r:level.start[1], h:level.start[2]||0 },
+    obst, marks,
+    ticks:0, frames:[]
+  };
+}
+function cellSet(st, c, r){ const k=key(c,r); return st.marks[k] || (st.marks[k]=new Set()); }
+function has(st, c, r, t){ const s=st.marks[key(c,r)]; return !!(s && s.has(t)); }
+
+function snapMarks(st){
+  const o={}; for(const k in st.marks){ const a=[...st.marks[k]]; if(a.length) o[k]=a; } return o;
+}
+function snap(st, mark){
+  st.frames.push({ g:{c:st.g.c,r:st.g.r,h:st.g.h}, marks:snapMarks(st), mark:mark||'', ticks:st.ticks });
+}
+function fail(st, line, reason){ const e=err(line, reason); e.fail=true; e.state=st; return e; }
+
+// ---- esecuzione ----
+function runProgram(level, parsed){
+  const st = newState(level);
+  const procs = parsed.procs;
+  snap(st, 'start');
+  let guard=0, depth=0;
+  const exec=(stmts)=>{
+    for(const s of stmts){
+      if(++guard>4000) throw err(s.line||0, 'troppe azioni: il programma e\' troppo lungo o gira a vuoto');
+      switch(s.type){
+        case 'avanza': {
+          const [dc,dr]=HEAD[st.g.h];
+          const nc=st.g.c+dc, nr=st.g.r+dr;
+          if(nc<0||nc>=st.cols||nr<0||nr>=st.rows) throw fail(st, s.line, 'di la\' si esce dal giardino: gira prima di avanzare');
+          if(st.obst[key(nc,nr)]) throw fail(st, s.line, 'c\'e\' un ostacolo davanti: giraci intorno');
+          st.g.c=nc; st.g.r=nr; st.ticks++; snap(st,'avanza');
+          break;
+        }
+        case 'gira': {
+          st.g.h = s.verso==='destra' ? (st.g.h+1)%4 : (st.g.h+3)%4;
+          st.ticks++; snap(st,'gira');
+          break;
+        }
+        case 'pianta': case 'innaffia': case 'taglia': case 'traccia': {
+          if(st.obst[key(st.g.c,st.g.r)]) throw fail(st, s.line, 'qui non si puo\' lavorare: c\'e\' un ostacolo');
+          cellSet(st, st.g.c, st.g.r).add(ATTI[s.type]);
+          st.ticks++; snap(st, s.type);
+          break;
+        }
+        case 'ripeti': for(let i=0;i<s.n;i++) exec(s.body); break;
+        case 'se': {
+          let val=false;
+          if(s.cond==='libero'){ const [dc,dr]=HEAD[st.g.h]; const nc=st.g.c+dc, nr=st.g.r+dr; val=(nc>=0&&nc<st.cols&&nr>=0&&nr<st.rows&&!st.obst[key(nc,nr)]); }
+          else if(s.cond==='erba'){ val=(!st.obst[key(st.g.c,st.g.r)] && !has(st,st.g.c,st.g.r,'taglio')); }
+          else if(s.cond==='vuoto'){ val=!has(st,st.g.c,st.g.r,'fiore'); }
+          else if(s.cond==='secco'){ val=(has(st,st.g.c,st.g.r,'fiore') && !has(st,st.g.c,st.g.r,'acqua')); }
+          if(val) exec(s.body);
+          break;
+        }
+        case 'call': {
+          if(++depth>80) throw err(s.line, 'le tue mosse si richiamano all\'infinito: controlla che non si chiamino tra loro a vuoto');
+          exec(procs[s.name]); depth--;
+          break;
+        }
+      }
+    }
+  };
+  exec(parsed.main);
+
+  // verifica obiettivo
+  const mancano = [];
+  for(const t of (level.targets||[])){ if(!has(st, t[0], t[1], t[2])) mancano.push(t); }
+  st.win = mancano.length===0;
+  st.mancano = mancano.length;
+  return st;
+}
+
+function stars(level, st){
+  const par=level.par;
+  if(st.ticks<=par.three) return 3;
+  if(st.ticks<=par.two) return 2;
+  return 1;
+}
+
+const API={ parseProgram, runProgram, stars, HEAD };
+if(typeof module!=='undefined' && module.exports) module.exports=API;
+global.VERDE_ENGINE=API;
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+
+<!-- ============================================================ -->
+<!-- LIVELLI -->
+<!-- ============================================================ -->
+<script>
+// 16 livelli di POLLICE VERDE! - 4 zone. Griglia 7x6.
+(function(global){
+'use strict';
+const LEVELS = [
+// ============ ZONA 1 - IL GIARDINIERE (sequenza, movimento base) ============
+{ id:1, nome:'Il primo fiore', zona:'Il giardiniere', codice:'SEME', cmds:['avanza','pianta'],
+  cols:7, rows:6, start:[3,5,0], obstacles:[], targets:[[3,3,'fiore']],
+  brief:'Gaia guarda verso l\'alto del giardino. Portala fino all\'aiuola e pianta il primo fiore. Falla <code>avanza</code>re due volte, poi <code>pianta</code>.',
+  fact:'Un programma e\' una serie di ordini eseguiti uno dopo l\'altro, nell\'ordine in cui li scrivi. Si chiama <strong>sequenza</strong>.',
+  par:{three:3, two:5},
+  sol:'avanza\navanza\npianta' },
+
+{ id:2, nome:'Erba da tagliare', zona:'Il giardiniere', codice:'GERMOGLIO', cmds:['avanza','taglia'],
+  cols:7, rows:6, start:[3,5,0], obstacles:[], targets:[[3,4,'taglio'],[3,3,'taglio'],[3,2,'taglio']],
+  brief:'L\'erba davanti a Gaia e\' troppo alta. Risali la striscia tagliandola casella per casella: <code>avanza</code> e poi <code>taglia</code>, di nuovo e di nuovo.',
+  fact:'Nota che <code>avanza</code> e <code>taglia</code> si ripetono uguali. Tieni a mente questo schema: piu\' avanti imparerai a non riscriverlo ogni volta.',
+  par:{three:6, two:8},
+  sol:'avanza\ntaglia\navanza\ntaglia\navanza\ntaglia' },
+
+{ id:3, nome:'Gira intorno all\'albero', zona:'Il giardiniere', codice:'RADICE', cmds:['avanza','gira','pianta'],
+  cols:7, rows:6, start:[3,4,0], obstacles:[[3,3]], targets:[[3,2,'fiore']],
+  brief:'Un grande albero blocca la strada dritta. Gaia non puo\' attraversarlo: deve <code>gira</code>re (destra o sinistra), girarci intorno e tornare in linea, poi <code>pianta</code>re il fiore dietro l\'albero.',
+  fact:'<code>gira destra</code> e <code>gira sinistra</code> cambiano la direzione verso cui guarda Gaia; <code>avanza</code> la muove sempre in quella direzione. E\' la logica della tartaruga.',
+  par:{three:8, two:11},
+  sol:'gira destra\navanza\ngira sinistra\navanza\navanza\ngira sinistra\navanza\npianta' },
+
+{ id:4, nome:'Il vialetto fiorito', zona:'Il giardiniere', codice:'VIALETTO', cmds:['avanza','gira','taglia','pianta'],
+  cols:7, rows:6, start:[3,5,0], obstacles:[], targets:[[3,4,'taglio'],[3,3,'taglio'],[3,2,'taglio'],[3,1,'fiore']],
+  brief:'Prepara il vialetto: risali tagliando l\'erba di tre caselle e, arrivata in fondo, pianta un fiore a chiusura. Pensa prima al percorso, poi scrivi i comandi.',
+  fact:'Hai di nuovo ripetuto <code>avanza</code> + <code>taglia</code> tante volte. Dalla prossima zona insegnerai a Gaia le tue mosse, per scrivere meno.',
+  par:{three:8, two:11},
+  sol:'avanza\ntaglia\navanza\ntaglia\navanza\ntaglia\navanza\npianta' },
+
+// ============ ZONA 2 - LE MIE ISTRUZIONI (impara una procedura, richiamala) ============
+{ id:5, nome:'Insegna a Gaia', zona:'Le mie istruzioni', codice:'FOGLIA', cmds:['avanza','pianta','impara'],
+  cols:7, rows:6, start:[3,5,0], obstacles:[], targets:[[3,4,'fiore'],[3,3,'fiore'],[3,2,'fiore']],
+  brief:'Tre fiori in fila, sempre la stessa mossa: <code>avanza</code> e <code>pianta</code>. Insegnala a Gaia una volta sola! Scrivi <code>impara passo</code> e sotto, rientrate di 2 spazi, le due istruzioni. Poi richiama <code>passo</code> tre volte.',
+  fact:'Una <strong>procedura</strong> e\' una mossa nuova che costruisci tu: le dai un nome con <code>impara</code> e poi la usi scrivendo solo quel nome. E\' il cuore di questo gioco.',
+  par:{three:6, two:9},
+  sol:'impara passo\n  avanza\n  pianta\npasso\npasso\npasso' },
+
+{ id:6, nome:'Due aiuole gemelle', zona:'Le mie istruzioni', codice:'PETALO', cmds:['avanza','gira','pianta','impara'],
+  cols:7, rows:6, start:[1,2,1], obstacles:[], targets:[[1,2,'fiore'],[2,2,'fiore'],[2,4,'fiore'],[1,4,'fiore']],
+  brief:'Due aiuole identiche, una in alto e una in basso, ognuna di due fiori. Insegna a Gaia la mossa <code>aiuola</code> (pianta, avanza, pianta) e richiamala in tutte e due i posti, spostandoti in mezzo.',
+  fact:'Una procedura si puo\' richiamare quante volte vuoi, in posti diversi. Scrivi la mossa una volta, la riusi sempre: meno fatica, meno errori.',
+  par:{three:10, two:13},
+  sol:'impara aiuola\n  pianta\n  avanza\n  pianta\naiuola\ngira destra\navanza\navanza\ngira destra\naiuola' },
+
+{ id:7, nome:'La siepe a file', zona:'Le mie istruzioni', codice:'SIEPE', cmds:['avanza','gira','taglia','impara'],
+  cols:7, rows:6, start:[1,1,1], obstacles:[],
+  targets:[[1,1,'taglio'],[2,1,'taglio'],[3,1,'taglio'],[1,3,'taglio'],[2,3,'taglio'],[3,3,'taglio']],
+  brief:'Devi rasare due file di siepe lunghe uguali. Insegna a Gaia la mossa <code>fila</code> che taglia tre caselle in riga, poi richiamala sulla prima fila e, spostandoti, sulla seconda.',
+  fact:'Quando lo stesso lavoro torna in piu\' punti, una procedura lo descrive una volta sola. Cambi solo il punto di partenza.',
+  par:{three:14, two:18},
+  sol:'impara fila\n  taglia\n  avanza\n  taglia\n  avanza\n  taglia\nfila\ngira destra\navanza\navanza\ngira destra\nfila' },
+
+{ id:8, nome:'Il tuo disegno', zona:'Le mie istruzioni', codice:'BOCCIOLO', cmds:['avanza','gira','pianta','taglia','impara'],
+  cols:7, rows:6, start:[1,2,1], obstacles:[],
+  targets:[[1,2,'fiore'],[2,2,'fiore'],[4,2,'fiore'],[5,2,'fiore']],
+  brief:'Disegna due cespugli fioriti separati da un vialetto vuoto. Insegna a Gaia due mosse tue: <code>cespuglio</code> (pianta, avanza, pianta) e <code>passo</code> (avanza due volte). Poi combinale: cespuglio, passo, cespuglio.',
+  fact:'Puoi avere piu\' procedure e usarle insieme, come mattoncini. Comporre le tue mosse e\' gia\' progettare un programma.',
+  par:{three:8, two:11},
+  sol:'impara cespuglio\n  pianta\n  avanza\n  pianta\nimpara passo\n  avanza\n  avanza\ncespuglio\npasso\ncespuglio' },
+
+// ============ ZONA 3 - SCHEMI NEL VERDE (procedura + ripeti, se) ============
+{ id:9, nome:'Ripeti dentro la mossa', zona:'Schemi nel verde', codice:'RASTRELLO', cmds:['avanza','gira','taglia','ripeti','impara'],
+  cols:7, rows:6, start:[0,2,1], obstacles:[],
+  targets:[[0,2,'taglio'],[1,2,'taglio'],[2,2,'taglio'],[3,2,'taglio'],[4,2,'taglio'],[5,2,'taglio'],
+           [0,4,'taglio'],[1,4,'taglio'],[2,4,'taglio'],[3,4,'taglio'],[4,4,'taglio'],[5,4,'taglio']],
+  brief:'Due prati interi da rasare. Dentro la mossa <code>fila</code> metti un <code>ripeti</code>: taglia e avanza per tutta la riga. Poi richiama <code>fila</code> sui due prati.',
+  fact:'Dentro una procedura puoi usare il <code>ripeti</code> che gia\' conosci. Cosi\' la stessa mossa fa tanto lavoro con poche righe.',
+  par:{three:26, two:32},
+  sol:'impara fila\n  taglia\n  ripeti 5\n    avanza\n    taglia\nfila\ngira destra\navanza\navanza\ngira destra\nfila' },
+
+{ id:10, nome:'La bordura quadrata', zona:'Schemi nel verde', codice:'AIUOLA', cmds:['avanza','gira','pianta','ripeti','impara'],
+  cols:7, rows:6, start:[1,4,0], obstacles:[],
+  targets:[[1,4,'fiore'],[1,3,'fiore'],[1,2,'fiore'],[1,1,'fiore'],[2,1,'fiore'],[3,1,'fiore'],[4,1,'fiore'],
+           [4,2,'fiore'],[4,3,'fiore'],[4,4,'fiore'],[3,4,'fiore'],[2,4,'fiore']],
+  brief:'Disegna una bordura di fiori a forma di quadrato. Insegna a Gaia un <code>lato</code> (pianta e avanza tre volte, poi gira) e ripetilo quattro volte per chiudere il quadrato.',
+  fact:'Un quadrato e\' lo stesso lato ripetuto quattro volte. <code>ripeti</code> + una tua procedura: e\' cosi\' che si disegnano le figure con il codice.',
+  par:{three:28, two:34},
+  sol:'impara lato\n  ripeti 3\n    pianta\n    avanza\n  gira destra\nripeti 4\n  lato' },
+
+{ id:11, nome:'Solo dove serve', zona:'Schemi nel verde', codice:'ROSA', cmds:['avanza','pianta','se','impara'],
+  cols:7, rows:6, start:[0,2,1], obstacles:[], preset:[[1,2,'fiore'],[3,2,'fiore']],
+  targets:[[0,2,'fiore'],[1,2,'fiore'],[2,2,'fiore'],[3,2,'fiore'],[4,2,'fiore'],[5,2,'fiore']],
+  brief:'In questa fila alcuni fiori ci sono gia\'. Gaia deve piantare solo nelle caselle vuote, senza sprecare. Insegna la mossa <code>controlla</code>: <code>se vuoto</code> pianta, poi avanza. Ripetila lungo la fila.',
+  fact:'<code>se</code> fa decidere al programma: l\'azione avviene solo quando la condizione e\' vera. Qui Gaia pianta soltanto dove il terreno e\' <code>vuoto</code>.',
+  par:{three:10, two:13},
+  sol:'impara controlla\n  se vuoto\n    pianta\n  avanza\nripeti 6\n  controlla' },
+
+{ id:12, nome:'Lo schema completo', zona:'Schemi nel verde', codice:'GIRASOLE', cmds:['avanza','gira','pianta','ripeti','impara'],
+  cols:7, rows:6, start:[1,1,1], obstacles:[],
+  targets:[[1,1,'fiore'],[2,1,'fiore'],[3,1,'fiore'],[4,1,'fiore'],[5,1,'fiore'],[5,2,'fiore'],[5,3,'fiore'],[5,4,'fiore']],
+  brief:'Disegna un\'aiuola a forma di L lungo due lati del giardino. Insegna la mossa <code>passo</code> (pianta e avanza) e usala con due <code>ripeti</code>, cambiando direzione con un <code>gira</code> nell\'angolo.',
+  fact:'Procedura + ripetizione + cambio di direzione: stai mettendo insieme tutti i mattoni per costruire una figura piu\' grande con poche righe.',
+  par:{three:17, two:22},
+  sol:'impara passo\n  pianta\n  avanza\nripeti 4\n  passo\ngira destra\nripeti 4\n  passo' },
+
+// ============ ZONA 4 - IL CAMPO (sintesi: le righe del campo, solo indicazioni) ============
+{ id:13, nome:'Le righe del campo', zona:'Il campo', codice:'CAMPO', cmds:['avanza','gira','traccia','ripeti','impara'],
+  cols:7, rows:6, start:[1,5,0], obstacles:[],
+  targets:[[1,5,'riga'],[1,4,'riga'],[1,3,'riga'],[1,2,'riga'],[1,1,'riga'],[2,1,'riga'],[3,1,'riga'],[4,1,'riga'],
+           [5,1,'riga'],[5,2,'riga'],[5,3,'riga'],[5,4,'riga'],[5,5,'riga'],[4,5,'riga'],[3,5,'riga'],[2,5,'riga']],
+  brief:'E\' ora di tracciare le righe bianche del campo della scuola. Disegna il bordo del campo: un lato si <code>traccia</code> e si <code>avanza</code> quattro volte, poi si gira. Ripeti per i quattro lati.',
+  fact:'<code>traccia</code> dipinge la riga bianca sotto i piedi di Gaia. Il bordo del campo e\' un quadrato: lo stesso lato, quattro volte.',
+  par:{three:36, two:44},
+  sol:'impara lato\n  ripeti 4\n    traccia\n    avanza\n  gira destra\nripeti 4\n  lato' },
+
+{ id:14, nome:'Le due aree di rigore', zona:'Il campo', codice:'PORTA', cmds:['avanza','gira','traccia','ripeti','impara'],
+  cols:7, rows:6, start:[2,0,1], obstacles:[],
+  targets:[[2,0,'riga'],[3,0,'riga'],[3,1,'riga'],[2,1,'riga'],[2,4,'riga'],[3,4,'riga'],[3,5,'riga'],[2,5,'riga']],
+  brief:'Ogni campo ha due aree di rigore identiche, una per porta. Disegna una sola volta la mossa <code>area</code> (un quadratino tracciato) e richiamala alle due estremita\' del campo.',
+  fact:'Due cose identiche, una procedura sola: la scrivi una volta e la usi due. Cambiare due aree vorra\' dire correggere una sola mossa.',
+  par:{three:30, two:37},
+  sol:'impara area\n  ripeti 4\n    traccia\n    avanza\n    gira destra\narea\ngira destra\nripeti 4\n  avanza\ngira sinistra\narea' },
+
+{ id:15, nome:'Il giardino della scuola', zona:'Il campo', codice:'GIARDINO', cmds:['avanza','gira','pianta','ripeti','impara'],
+  cols:7, rows:6, start:[0,1,1], obstacles:[],
+  targets:[[0,1,'fiore'],[1,1,'fiore'],[4,1,'fiore'],[5,1,'fiore'],[5,4,'fiore'],[4,4,'fiore'],[1,4,'fiore'],[0,4,'fiore']],
+  brief:'Abbellisci i quattro angoli del cortile con quattro aiuole uguali. Insegna a Gaia la mossa <code>aiuola</code> e richiamala ai quattro angoli, spostandoti con dei <code>ripeti</code>.',
+  fact:'Una mossa, quattro angoli: e\' il vantaggio delle procedure. Il giardino prende forma e il tuo codice resta corto e ordinato.',
+  par:{three:23, two:29},
+  sol:'impara aiuola\n  pianta\n  avanza\n  pianta\naiuola\nripeti 3\n  avanza\naiuola\ngira destra\nripeti 3\n  avanza\ngira destra\naiuola\nripeti 3\n  avanza\naiuola' },
+
+{ id:16, nome:'Pollice verde!', zona:'Il campo', codice:'FIORITURA', cmds:['avanza','gira','pianta','traccia','ripeti','se','impara'],
+  cols:7, rows:6, start:[0,2,1], obstacles:[], preset:[[2,0,'fiore']],
+  targets:[[0,2,'riga'],[1,2,'riga'],[2,2,'riga'],[3,2,'riga'],[4,2,'riga'],[5,2,'riga'],
+           [1,0,'fiore'],[2,0,'fiore'],[3,0,'fiore'],[4,0,'fiore'],[5,0,'fiore'],[6,0,'fiore']],
+  brief:'La prova finale, giardiniere! Traccia la linea di meta\' campo e poi fiorisci il bordo in alto, piantando solo dove e\' vuoto. Metti insieme tutto: le tue mosse, il <code>ripeti</code> e il <code>se</code>.',
+  fact:'Hai imparato a dare ordini in sequenza, a costruire mosse tue, a ripeterle e a decidere con una condizione. Questo e\' programmare. Pollice verde!',
+  par:{three:27, two:34},
+  sol:'impara linea\n  traccia\n  avanza\nimpara fila\n  se vuoto\n    pianta\n  avanza\nripeti 6\n  linea\ngira sinistra\navanza\navanza\ngira sinistra\nripeti 6\n  fila' }
+];
+if(typeof module!=='undefined' && module.exports) module.exports=LEVELS;
+global.VERDE_LEVELS=LEVELS;
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+
+<!-- ============================================================ -->
+<!-- APP (interfaccia, renderer del giardino, playback) -->
+<!-- ============================================================ -->
+<script>
+(function(){
+'use strict';
+const ENG = window.VERDE_ENGINE, LEVELS = window.VERDE_LEVELS;
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+// progressi in memoria (azzerati a ogni riaccesso)
+let maxSbloccato=1, stelleLivello={}, docente=false, livelloCorrente=1, curLevel=null, curTargets=1, playing=false;
+let editorEl, numeriEl, tok={gaia:null, arrow:null};
+
+function show(id){ $$('.screen').forEach(e=>e.classList.remove('attiva')); $(id).classList.add('attiva'); }
+function codiceDi(id){ return (LEVELS[id-1]||{}).codice; }
+
+// ===== GIARDINO: geometria =====
+const SVGNS='http://www.w3.org/2000/svg';
+const CELL=54, MX=20, MY=20;
+function dimsOf(lv){ const cols=lv.cols, rows=lv.rows; return { cols, rows, VW:MX*2+CELL*cols, VH:MY*2+CELL*rows }; }
+function cx(c){ return MX+CELL/2+c*CELL; }
+function cy(r){ return MY+CELL/2+r*CELL; }
+function el(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+function kkey(c,r){ return c+','+r; }
+
+// sfondo del giardino: terra + griglia
+function terreno(lv){
+  const d=dimsOf(lv), w=CELL*d.cols, h=CELL*d.rows;
+  let s='';
+  s+='<rect x="'+MX+'" y="'+MY+'" width="'+w+'" height="'+h+'" rx="10" fill="url(#suolo)"/>';
+  // strisce prato alternate per dare profondita'
+  for(let c=0;c<d.cols;c++){ if(c%2===0) s+='<rect x="'+(MX+c*CELL)+'" y="'+MY+'" width="'+CELL+'" height="'+h+'" fill="#000" opacity="0.04"/>'; }
+  for(let c=1;c<d.cols;c++) s+='<line x1="'+(MX+c*CELL)+'" y1="'+MY+'" x2="'+(MX+c*CELL)+'" y2="'+(MY+h)+'" stroke="#2c5e2f" stroke-opacity="0.18"/>';
+  for(let r=1;r<d.rows;r++) s+='<line x1="'+MX+'" y1="'+(MY+r*CELL)+'" x2="'+(MX+w)+'" y2="'+(MY+r*CELL)+'" stroke="#2c5e2f" stroke-opacity="0.18"/>';
+  s+='<rect x="'+MX+'" y="'+MY+'" width="'+w+'" height="'+h+'" rx="10" fill="none" stroke="#fff" stroke-width="3" stroke-opacity="0.7"/>';
+  return s;
+}
+// obiettivi: sagome leggere di dove andra' messa ogni cosa
+function fantasmi(lv){
+  let s='';
+  (lv.targets||[]).forEach(t=>{ s+=glifo(t[2], cx(t[0]), cy(t[1]), 0.22); });
+  return s;
+}
+// ostacoli: alberi
+function ostacoli(lv){
+  let s='';
+  (lv.obstacles||[]).forEach(([c,r])=>{
+    const x=cx(c), y=cy(r);
+    s+='<g transform="translate('+x+','+y+')">'
+      +'<ellipse cx="0" cy="20" rx="15" ry="5" fill="#000" opacity="0.15"/>'
+      +'<rect x="-4" y="2" width="8" height="18" rx="2" fill="#7a4a22"/>'
+      +'<circle cx="0" cy="-6" r="17" fill="#2E7D3A"/>'
+      +'<circle cx="-9" cy="2" r="11" fill="#3a9247"/>'
+      +'<circle cx="9" cy="2" r="11" fill="#3a9247"/>'
+      +'<circle cx="0" cy="-2" r="13" fill="#46a356"/>'
+      +'</g>';
+  });
+  return s;
+}
+// un glifo (segno su una casella): fiore/acqua/taglio/riga
+function glifo(tipo, x, y, op){
+  op = op==null?1:op;
+  if(tipo==='taglio'){
+    return '<g transform="translate('+x+','+y+')" opacity="'+op+'">'
+      +'<rect x="-23" y="-23" width="46" height="46" rx="7" fill="#9ED27F"/>'
+      +'<line x1="-16" y1="-10" x2="-16" y2="14" stroke="#5E9047" stroke-width="2"/>'
+      +'<line x1="-6" y1="-10" x2="-6" y2="14" stroke="#5E9047" stroke-width="2"/>'
+      +'<line x1="4" y1="-10" x2="4" y2="14" stroke="#5E9047" stroke-width="2"/>'
+      +'<line x1="14" y1="-10" x2="14" y2="14" stroke="#5E9047" stroke-width="2"/>'
+      +'</g>';
+  }
+  if(tipo==='riga'){
+    return '<g transform="translate('+x+','+y+')" opacity="'+op+'">'
+      +'<rect x="-23" y="-23" width="46" height="46" rx="7" fill="#3f8f4c"/>'
+      +'<rect x="-23" y="-9" width="46" height="18" fill="#ffffff" opacity="0.95"/>'
+      +'</g>';
+  }
+  if(tipo==='acqua'){
+    return '<g transform="translate('+x+','+y+')" opacity="'+op+'">'
+      +'<path d="M0 -6 C7 4 7 12 0 12 C-7 12 -7 4 0 -6 Z" fill="#4FA3D8" stroke="#2E7AB0" stroke-width="1.2"/>'
+      +'<ellipse cx="-2" cy="4" rx="2" ry="3" fill="#bfe3f5" opacity="0.8"/>'
+      +'</g>';
+  }
+  // fiore (default)
+  return '<g transform="translate('+x+','+y+')" opacity="'+op+'">'
+    +'<rect x="-1.6" y="0" width="3.2" height="17" rx="1.6" fill="#2f8f4e"/>'
+    +'<ellipse cx="6" cy="9" rx="6" ry="3" fill="#2f8f4e" transform="rotate(20 6 9)"/>'
+    +'<g>'
+    +'<circle cx="0" cy="-9" r="6.5" fill="#E0518A"/>'
+    +'<circle cx="8" cy="-3" r="6.5" fill="#E0518A"/>'
+    +'<circle cx="5" cy="7" r="6.5" fill="#E0518A"/>'
+    +'<circle cx="-5" cy="7" r="6.5" fill="#E0518A"/>'
+    +'<circle cx="-8" cy="-3" r="6.5" fill="#E0518A"/>'
+    +'<circle cx="0" cy="0" r="5.2" fill="#F4C84A"/>'
+    +'</g></g>';
+}
+// segni di una griglia (object key->array di tipi). Ordine: sfondo poi sopra.
+function renderMarks(marks){
+  const ordine={taglio:0, riga:0, fiore:1, acqua:2};
+  const items=[];
+  for(const k in marks){ const [c,r]=k.split(',').map(Number); (marks[k]||[]).forEach(t=> items.push([ordine[t]||0, t, cx(c), cy(r)])); }
+  items.sort((a,b)=>a[0]-b[0]);
+  let s=''; items.forEach(it=> s+=glifo(it[1], it[2], it[3], 1)); return s;
+}
+function gardenSVG(lv){
+  const d=dimsOf(lv);
+  return '<svg id="giardino" viewBox="0 0 '+d.VW+' '+d.VH+'" xmlns="'+SVGNS+'" preserveAspectRatio="xMidYMid meet">'
+    + '<defs><linearGradient id="suolo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#84B86A"/><stop offset="1" stop-color="#6BA055"/></linearGradient></defs>'
+    + terreno(lv)
+    + '<g id="ghosts">'+fantasmi(lv)+'</g>'
+    + ostacoli(lv)
+    + '<g id="marks"></g>'
+    + '<g id="tokens"></g>'
+    + '<text id="garden-pop" x="'+(d.VW/2)+'" y="'+(MY+CELL*d.rows/2)+'" text-anchor="middle" class="garden-pop"></text>'
+    + '</svg>';
+}
+function mkGaia(){
+  const g=el('g',{class:'tok gaia'});
+  g.innerHTML=''
+    +'<ellipse cx="0" cy="18" rx="14" ry="4.5" fill="#000" opacity="0.16"/>'
+    +'<path d="M-12 18 Q-13 0 0 -2 Q13 0 12 18 Z" fill="#2F8F4E"/>'      // grembiule verde
+    +'<rect x="-4" y="-6" width="8" height="8" fill="#F2C79B"/>'           // collo
+    +'<circle cx="0" cy="-12" r="11" fill="#F4CBA0"/>'                     // viso
+    +'<path d="M-12 -12 Q0 -20 12 -12 Z" fill="#7a4a22"/>'                 // capelli
+    +'<ellipse cx="0" cy="-15" rx="17" ry="6" fill="#E3B23C"/>'           // tesa cappello
+    +'<path d="M-9 -15 Q0 -29 9 -15 Z" fill="#EFC65A"/>'                   // cupola cappello
+    +'<circle cx="0" cy="-22" r="2.4" fill="#E0518A"/>'                    // fiorellino sul cappello
+    +'<circle cx="-4" cy="-12" r="1.6" fill="#3a2a18"/>'                   // occhi
+    +'<circle cx="4" cy="-12" r="1.6" fill="#3a2a18"/>'
+    +'<path d="M-3 -7 Q0 -5 3 -7" stroke="#b0623a" stroke-width="1.4" fill="none" stroke-linecap="round"/>';
+  return g;
+}
+function mkArrow(){
+  const g=el('g',{class:'tok arrow'});
+  g.innerHTML='<path d="M0 -24 L7 -15 L2.6 -15 L2.6 -7 L-2.6 -7 L-2.6 -15 L-7 -15 Z" fill="#1E6B38" stroke="#fff" stroke-width="1.6"/>';
+  return g;
+}
+function setTok(e,c,r,deg){ e.style.transform='translate('+cx(c)+'px,'+cy(r)+'px)'+(deg!=null?(' rotate('+deg+'deg)'):''); }
+
+function startFrame(lv){
+  const g={c:lv.start[0], r:lv.start[1], h:lv.start[2]||0};
+  const marks={}; (lv.preset||[]).forEach(([c,r,t])=>{ const k=kkey(c,r); (marks[k]||(marks[k]=[])).push(t); });
+  return { g, marks, mark:'start' };
+}
+function buildGarden(f){
+  $('#stage').innerHTML=gardenSVG(curLevel);
+  const svg=$('#giardino'); const g=svg.querySelector('#tokens');
+  g.classList.add('noanim');
+  svg.querySelector('#marks').innerHTML=renderMarks(f.marks||{});
+  const arrow=mkArrow(); g.appendChild(arrow); tok.arrow=arrow;
+  const gaia=mkGaia(); g.appendChild(gaia); tok.gaia=gaia;
+  setTok(arrow, f.g.c, f.g.r, f.g.h*90); setTok(gaia, f.g.c, f.g.r);
+  void g.getBoundingClientRect();
+  requestAnimationFrame(()=>g.classList.remove('noanim'));
+  updateScore(f);
+}
+function drawFrame(f){
+  const svg=$('#giardino'); if(!svg) return;
+  svg.querySelector('#marks').innerHTML=renderMarks(f.marks||{});
+  if(tok.gaia) setTok(tok.gaia, f.g.c, f.g.r);
+  if(tok.arrow) setTok(tok.arrow, f.g.c, f.g.r, f.g.h*90);
+  updateScore(f);
+}
+function fattiCount(f){
+  let done=0; (curLevel.targets||[]).forEach(t=>{ const a=(f.marks||{})[kkey(t[0],t[1])]; if(a && a.indexOf(t[2])>=0) done++; }); return done;
+}
+function updateScore(f){ const s=$('#score'); if(s) s.textContent=fattiCount(f)+' / '+curTargets; }
+function festeggia(){
+  const svg=$('#giardino'); if(!svg) return;
+  const pop=svg.querySelector('#garden-pop'); if(pop){ pop.textContent='GIARDINO CURATO!'; pop.classList.add('show'); setTimeout(()=>pop.classList.remove('show'),900); }
+}
+
+// ===== AUDIO (WebAudio) =====
+let AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function tono(freq,dur,tipo,vol,t0){ const a=ac(); if(!a) return; const o=a.createOscillator(),g=a.createGain(); o.type=tipo||'sine'; o.frequency.value=freq; const t=t0||a.currentTime; g.gain.setValueAtTime(vol||0.08,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+dur); }
+function passo(){ tono(240,0.09,'sine',0.10); }
+function giroSuono(){ tono(420,0.07,'triangle',0.07); }
+function piantaSuono(){ const a=ac(); if(!a) return; tono(520,0.10,'sine',0.10); tono(780,0.10,'sine',0.07,a.currentTime+0.05); }
+function tagliaSuono(){ const a=ac(); if(!a) return; const n=a.createBufferSource(),buf=a.createBuffer(1,2200,a.sampleRate),d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); n.buffer=buf; const g=a.createGain(); g.gain.value=0.07; const f=a.createBiquadFilter(); f.type='highpass'; f.frequency.value=2200; n.connect(f); f.connect(g); g.connect(a.destination); n.start(); }
+function acquaSuono(){ const a=ac(); if(!a) return; tono(900,0.16,'sine',0.06); tono(600,0.16,'sine',0.05,a.currentTime+0.04); }
+function tracciaSuono(){ tono(330,0.14,'triangle',0.08); }
+function buzz(){ tono(150,0.32,'sawtooth',0.10); }
+function fanfara(){ const a=ac(); if(!a) return; const seq=[[523,0],[659,0.12],[784,0.24],[1046,0.40]]; seq.forEach(([f,t])=>tono(f,0.26,'triangle',0.12,a.currentTime+t)); }
+
+// ===== MASCOTTE Gaia (SVG inline, robusta offline) =====
+function gaiaSVG(size){ size=size||50;
+  return '<svg class="gaia-av" width="'+size+'" height="'+size+'" viewBox="0 0 60 60" aria-label="Gaia">'
+    +'<circle cx="30" cy="30" r="30" fill="#E8F4DC"/>'
+    +'<circle cx="30" cy="40" r="17" fill="#F4CBA0"/>'
+    +'<path d="M14 38 Q30 24 46 38 Z" fill="#7a4a22"/>'
+    +'<ellipse cx="30" cy="33" rx="24" ry="8" fill="#E3B23C"/>'
+    +'<path d="M16 33 Q30 12 44 33 Z" fill="#EFC65A"/>'
+    +'<circle cx="30" cy="20" r="3.4" fill="#E0518A"/><circle cx="30" cy="20" r="1.4" fill="#F4C84A"/>'
+    +'<circle cx="24" cy="40" r="2.2" fill="#3a2a18"/><circle cx="36" cy="40" r="2.2" fill="#3a2a18"/>'
+    +'<path d="M25 47 Q30 50 35 47" stroke="#b0623a" stroke-width="2" fill="none" stroke-linecap="round"/>'
+    +'<circle cx="21" cy="45" r="2.6" fill="#F2A9C0" opacity="0.7"/><circle cx="39" cy="45" r="2.6" fill="#F2A9C0" opacity="0.7"/>'
+    +'</svg>';
+}
+// foto reale di Gaia (ritratto tondo) con ripiego SVG se l'immagine manca (offline)
+function gaiaAv(size){ size=size||50;
+  return '<img src="gaia-faccia.jpg" class="gaia-av gaia-foto" width="'+size+'" height="'+size+'" alt="Gaia" loading="lazy" onerror="this.outerHTML=window.__verdeGaiaSVG('+size+')">';
+}
+window.__verdeGaiaSVG=gaiaSVG;
+function logoMini(){
+  return '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">'
+    +'<path d="M12 21 C12 14 6 13 4 9 C9 8 12 11 12 15 C12 11 16 7 21 8 C19 14 12 14 12 21 Z" fill="#fff"/>'
+    +'<rect x="11" y="14" width="2" height="7" rx="1" fill="#fff"/></svg>';
+}
+window.__verdeLogoMini=logoMini;
+// faccia di Gaia come logo tondo d'angolo (ripiego: fogliolina SVG)
+function logoGaia(){
+  return '<img src="gaia-faccia.jpg" class="logo-foto" alt="Gaia" onerror="this.outerHTML=window.__verdeLogoMini()">';
+}
+
+// ===== SCENA SPLASH =====
+function scenaSplash(){
+  return '<svg viewBox="0 0 600 420" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">'
+    +'<defs><linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFE6F2"/><stop offset="1" stop-color="#E8F6E0"/></linearGradient></defs>'
+    +'<rect width="600" height="420" fill="url(#cielo)"/>'
+    +'<circle cx="500" cy="80" r="46" fill="#FCE08A"/><circle cx="500" cy="80" r="58" fill="#FCE08A" opacity="0.35"/>'
+    +'<path d="M0 300 Q150 250 300 290 Q450 330 600 280 L600 420 L0 420 Z" fill="#7FB069"/>'
+    +'<path d="M0 340 Q160 300 320 340 Q470 376 600 330 L600 420 L0 420 Z" fill="#5E9047"/>'
+    // albero
+    +'<g transform="translate(110,300)"><rect x="-9" y="-46" width="18" height="60" rx="5" fill="#7a4a22"/>'
+    +'<circle cx="0" cy="-60" r="40" fill="#3a9247"/><circle cx="-30" cy="-44" r="28" fill="#46a356"/><circle cx="30" cy="-44" r="28" fill="#46a356"/><circle cx="0" cy="-40" r="30" fill="#56b366"/></g>'
+    // fiori
+    +flowerAt(250,360,'#E0518A')+flowerAt(300,378,'#F4845F')+flowerAt(355,360,'#C77DD6')+flowerAt(415,380,'#E0518A')+flowerAt(470,362,'#F4C84A')
+    // Gaia grande
+    +'<g transform="translate(300,250) scale(2.4)">'
+    +'<ellipse cx="0" cy="18" rx="14" ry="4.5" fill="#000" opacity="0.14"/>'
+    +'<path d="M-12 18 Q-13 0 0 -2 Q13 0 12 18 Z" fill="#2F8F4E"/>'
+    +'<rect x="-4" y="-6" width="8" height="8" fill="#F2C79B"/>'
+    +'<circle cx="0" cy="-12" r="11" fill="#F4CBA0"/>'
+    +'<path d="M-12 -12 Q0 -20 12 -12 Z" fill="#7a4a22"/>'
+    +'<ellipse cx="0" cy="-15" rx="17" ry="6" fill="#E3B23C"/>'
+    +'<path d="M-9 -15 Q0 -29 9 -15 Z" fill="#EFC65A"/>'
+    +'<circle cx="0" cy="-22" r="2.4" fill="#E0518A"/>'
+    +'<circle cx="-4" cy="-12" r="1.6" fill="#3a2a18"/><circle cx="4" cy="-12" r="1.6" fill="#3a2a18"/>'
+    +'<path d="M-3 -7 Q0 -5 3 -7" stroke="#b0623a" stroke-width="1.4" fill="none" stroke-linecap="round"/></g>'
+    +'</svg>';
+}
+window.__verdeScena=scenaSplash;
+function flowerAt(x,y,col){
+  return '<g transform="translate('+x+','+y+')"><rect x="-2" y="0" width="4" height="22" rx="2" fill="#2f8f4e"/>'
+    +'<circle cx="0" cy="-9" r="7" fill="'+col+'"/><circle cx="9" cy="-2" r="7" fill="'+col+'"/><circle cx="5" cy="8" r="7" fill="'+col+'"/><circle cx="-5" cy="8" r="7" fill="'+col+'"/><circle cx="-9" cy="-2" r="7" fill="'+col+'"/><circle cx="0" cy="0" r="5.6" fill="#F4C84A"/></g>';
+}
+
+// ===== PREMI =====
+const PREMI_SOGLIA=[4,8,12];
+const PREMI=[
+  { titolo:'Gli ordini in fila', occhiello:'premio · dopo la zona Il giardiniere', illo:'sequenza',
+    intro:'Hai fatto i primi passi nel giardino! Prima di andare avanti, fermati a capire la cosa piu\' importante del codice: <strong>l\'ordine</strong> in cui dici le cose.',
+    cmap:{ centro:'LA SEQUENZA', rami:[
+      {h:'Un comando alla volta', p:'Gaia esegue un ordine per volta, nell\'ordine in cui glielo scrivi. Anche tu scrivi una riga alla volta.'},
+      {h:'L\'ordine conta', p:'Prima avanzi, poi pianti: se scambi le righe, il fiore finisce nel posto sbagliato. La sequenza e\' il primo schema.'},
+      {h:'Dentro il giardino', p:'Non si esce dalle aiuole e non si attraversano gli alberi: sono i limiti dentro cui costruire il percorso.'} ]},
+    testo:'<strong>Mettere le azioni nell\'ordine giusto</strong> e\' il primo passo del pensiero computazionale: scomporre un lavoro in tanti piccoli ordini precisi.' },
+  { titolo:'Le mosse che insegni', occhiello:'premio · dopo la zona Le mie istruzioni', illo:'procedura',
+    intro:'Ora Gaia impara da te! Hai scoperto il cuore di questo gioco: le <strong>procedure</strong>, cioe\' le mosse nuove che inventi e richiami quando vuoi.',
+    cmap:{ centro:'LE PROCEDURE', rami:[
+      {h:'Dai un nome · impara', p:'Raccogli alcune azioni sotto un nome tuo: da quel momento esiste una mossa nuova, fatta da te.'},
+      {h:'Richiama quante volte vuoi', p:'Scrivi il nome e la mossa si ripete uguale, in posti diversi. La pensi una volta, la usi sempre.'},
+      {h:'Meno codice, meno errori', p:'Se devi cambiare qualcosa, correggi la mossa in un punto solo: tutto il giardino si aggiorna.'} ]},
+    testo:'Le procedure ti fanno <strong>dare un nome alle idee</strong>: e\' cosi\' che i programmatori costruiscono cose grandi a partire da pezzi piccoli e riusabili.' },
+  { titolo:'Gli schemi del codice', occhiello:'premio · dopo la zona Schemi nel verde', illo:'schemi',
+    intro:'«Bravo giardiniere!» dice Gaia. «Ora sai mettere insieme tutti i mattoni del codice. Ecco i quattro pensieri che useremo per curare ogni angolo del verde.»',
+    valori:[
+      {h:'Scomporre', p:'Un giardino grande si cura un pezzetto alla volta. Dividi il problema in passi piccoli e affrontabili.'},
+      {h:'Riconoscere gli schemi · ripeti', p:'Quando un lavoro torna uguale, non riscriverlo: usa il ripeti. Vedere cosa si ripete e\' mezzo lavoro fatto.'},
+      {h:'Decidere · se', p:'Guarda il terreno: se e\' vuoto pianti, se serve acqua innaffi. La condizione sceglie al posto tuo.'},
+      {h:'Riusare · le tue mosse', p:'Una procedura ben fatta si riusa in mille giardini. Il codice resta corto, ordinato e facile da capire.'} ],
+    testo:'Scomporre, riconoscere, decidere e riusare: sono le <strong>strategie del programmatore</strong>, le stesse che servono per risolvere tanti problemi nella vita.' }
+];
+function premioSbloccato(i){ if(docente) return true; for(let id=1; id<=PREMI_SOGLIA[i]; id++){ if(!stelleLivello[id]) return false; } return true; }
+function medagliaSVG(){ return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 C12 14 6 13 4 9 C9 8 12 11 12 15 C12 11 16 7 21 8 C19 14 12 14 12 21 Z" fill="#fff"/><rect x="11" y="14" width="2" height="7" rx="1" fill="#fff"/></svg>'; }
+function lucchPremio(){ return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="#fff" stroke-width="2"/><rect x="5" y="10" width="14" height="10" rx="2" fill="#fff"/></svg>'; }
+function illoPremio(kind){
+  const bg='<rect width="120" height="120" fill="#E8F4DC"/>';
+  if(kind==='sequenza') return '<svg viewBox="0 0 120 120" style="width:100%;height:100%">'+bg+'<circle cx="30" cy="60" r="13" fill="#2F8F4E"/><circle cx="60" cy="60" r="13" fill="#E0A21E"/><circle cx="90" cy="60" r="13" fill="#C8281E"/><path d="M44 60 H47 M74 60 H77" stroke="#1E6B38" stroke-width="3"/><text x="30" y="65" text-anchor="middle" font-size="14" fill="#fff" font-family="Fredoka">1</text><text x="60" y="65" text-anchor="middle" font-size="14" fill="#fff" font-family="Fredoka">2</text><text x="90" y="65" text-anchor="middle" font-size="14" fill="#fff" font-family="Fredoka">3</text></svg>';
+  if(kind==='procedura') return '<svg viewBox="0 0 120 120" style="width:100%;height:100%">'+bg+'<rect x="22" y="26" width="76" height="26" rx="8" fill="#2F8F4E"/><text x="60" y="44" text-anchor="middle" font-size="13" fill="#fff" font-family="Fredoka">aiuola</text>'+flowerAt(35,92,'#E0518A')+flowerAt(60,92,'#E0518A')+flowerAt(85,92,'#E0518A')+'</svg>';
+  return '<svg viewBox="0 0 120 120" style="width:100%;height:100%">'+bg+'<rect x="20" y="22" width="80" height="22" rx="7" fill="#E0A21E"/><text x="60" y="38" text-anchor="middle" font-size="12" fill="#fff" font-family="Fredoka">ripeti 4</text>'+flowerAt(34,80,'#C77DD6')+flowerAt(60,80,'#F4845F')+flowerAt(86,80,'#3E7CB1')+flowerAt(60,104,'#E0518A')+'</svg>';
+}
+function apriPremio(i){
+  const p=PREMI[i];
+  $('#premio-titolo').textContent=p.titolo;
+  let h='<div class="premio-hero"><div class="pr-illo">'+illoPremio(p.illo)+'</div><div><div class="occhiello-pr">'+p.occhiello+'</div><h2>'+p.titolo+'</h2><p>'+p.intro+'</p></div></div>';
+  if(p.cmap){
+    h+='<div class="cmap"><div class="cmap-centro">'+p.cmap.centro+'</div><div class="cmap-link"></div><div class="cmap-rami">';
+    p.cmap.rami.forEach(r=>{ h+='<div class="cmap-ramo"><h4>'+r.h+'</h4><p>'+r.p+'</p></div>'; });
+    h+='</div></div>';
+  }
+  if(p.valori){
+    h+='<div class="valori-griglia">';
+    p.valori.forEach(v=>{ h+='<div class="valore"><h4>'+v.h+'</h4><p>'+v.p+'</p></div>'; });
+    h+='</div>';
+  }
+  h+='<div class="premio-testo">'+p.testo+'</div>';
+  h+='<div class="premio-pie"><button class="btn-big" style="margin-top:0;padding:11px 28px" id="btn-premio-torna">Torna al giardino</button></div>';
+  $('#premio-inner').innerHTML=h;
+  $('#btn-premio-torna').onclick=()=>{ buildMappa(); show('#mappa'); };
+  show('#premio');
+}
+
+// ===== STRATO NARRATIVO =====
+const ZONE_INFO={
+  'Il giardiniere':{ icon:'g1', cap:'Capitolo 1 · I primi passi', racconto:'Primo giorno nel verde della Sacra Famiglia. Prendi in mano gli attrezzi e guida Gaia: un ordine alla volta.' },
+  'Le mie istruzioni':{ icon:'g2', cap:'Capitolo 2 · Le mosse di Gaia', racconto:'Basta riscrivere sempre le stesse cose: insegna a Gaia delle mosse tue e richiamale quando ti servono.' },
+  'Schemi nel verde':{ icon:'g3', cap:'Capitolo 3 · Gli schemi', racconto:'E\' il tempo dei disegni nel verde: ripeti le tue mosse e fai decidere al codice dove serve davvero.' },
+  'Il campo':{ icon:'g4', cap:'Capitolo 4 · Il gran finale', racconto:'Si passa ai campi da gioco e al cortile: traccia le righe, fiorisci gli angoli, mostra il tuo pollice verde.' }
+};
+function zoneIcon(kind){
+  const wrap=s=>'<svg viewBox="0 0 60 60">'+s+'</svg>';
+  if(kind==='g1') return wrap('<rect width="60" height="60" fill="#E8F4DC"/>'+flowerAt(30,40,'#E0518A'));
+  if(kind==='g2') return wrap('<rect width="60" height="60" fill="#E8F4DC"/><rect x="10" y="18" width="40" height="14" rx="5" fill="#2F8F4E"/><circle cx="20" cy="44" r="5" fill="#E0518A"/><circle cx="40" cy="44" r="5" fill="#E0518A"/>');
+  if(kind==='g3') return wrap('<rect width="60" height="60" fill="#E8F4DC"/><rect x="12" y="12" width="36" height="36" rx="6" fill="none" stroke="#2F8F4E" stroke-width="4"/><circle cx="30" cy="30" r="6" fill="#E0A21E"/>');
+  return wrap('<rect width="60" height="60" fill="#3f8f4c"/><rect x="8" y="20" width="44" height="20" fill="none" stroke="#fff" stroke-width="3"/><line x1="30" y1="20" x2="30" y2="40" stroke="#fff" stroke-width="3"/>');
+}
+function zonaCap(z,zi){
+  const info=ZONE_INFO[z]||{};
+  const thumb=info.icon ? '<div class="zona-thumb">'+zoneIcon(info.icon)+'</div>' : '';
+  return '<div class="zona-cap">'+thumb+'<div class="zona-cap-txt">'+
+    (info.cap?'<div class="capitolo">'+info.cap+'</div>':'')+
+    '<div class="zona-titolo"><span class="zona-num">Zona '+(zi+1)+'</span> '+z+'</div>'+
+    (info.racconto?'<div class="racconto">'+info.racconto+'</div>':'')+
+    '</div></div>';
+}
+
+// ===== MAPPA =====
+function buildMappa(){
+  const box=$('#zone'); box.innerHTML='';
+  const zone=[]; const seen={};
+  LEVELS.forEach(lv=>{ if(!seen[lv.zona]){ seen[lv.zona]=true; zone.push(lv.zona); } });
+  zone.forEach((z,zi)=>{
+    const lvs=LEVELS.filter(l=>l.zona===z);
+    const card=document.createElement('div'); card.className='zona';
+    let h=zonaCap(z,zi)+'<div class="zona-griglia">';
+    lvs.forEach(lv=>{
+      const sbloccato = docente || lv.id<=maxSbloccato;
+      const completato = stelleLivello[lv.id]>0;
+      const corrente = sbloccato && !completato && lv.id===maxSbloccato;
+      const gg=stelleLivello[lv.id]||0;
+      h+='<div class="nodo'+(sbloccato?'':' bloccato')+(completato?' completato':'')+(corrente?' corrente':'')+'" data-lv="'+lv.id+'">';
+      h+='<div class="palla">';
+      if(sbloccato) h+=lv.id; else h+='<svg width="22" height="22" viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2" fill="none" stroke="#fff" stroke-width="2"/><rect x="5" y="10" width="14" height="10" rx="2" fill="#fff"/></svg>';
+      h+='</div>';
+      h+='<div class="nome">'+lv.nome+'</div>';
+      h+='<div class="stelline"><i class="'+(gg>=1?'on':'')+'"></i><i class="'+(gg>=2?'on':'')+'"></i><i class="'+(gg>=3?'on':'')+'"></i></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+    card.innerHTML=h;
+    box.appendChild(card);
+  });
+  box.querySelectorAll('.nodo').forEach(n=>{
+    n.addEventListener('click',()=>{ const id=+n.getAttribute('data-lv'); if(docente||id<=maxSbloccato) apriLivello(id); });
+  });
+  // bacheca dei premi
+  const bac=document.createElement('div'); bac.className='bacheca';
+  let bh='<div class="zona-cap"><div class="zona-thumb"><svg viewBox="0 0 60 60"><rect width="60" height="60" fill="#FFF1CC"/><path d="M30 48 C30 38 18 36 14 28 C24 26 30 32 30 40 C30 32 38 24 48 26 C44 38 30 38 30 48 Z" fill="#2F8F4E"/></svg></div><div class="zona-cap-txt">'+
+    '<div class="capitolo">La bacheca del giardino</div>'+
+    '<div class="zona-titolo"><span class="zona-num">Premi</span> Le idee del coding</div>'+
+    '<div class="racconto">Ogni zona conquistata sblocca una pagina sulle grandi idee del pensiero computazionale.</div>'+
+    '</div></div><div class="premio-griglia">';
+  PREMI.forEach((p,i)=>{
+    const ok=premioSbloccato(i);
+    bh+='<div class="trofeo'+(ok?'':' bloccato')+'" data-premio="'+i+'">';
+    bh+='<div class="medaglia">'+(ok?medagliaSVG():lucchPremio())+'</div>';
+    bh+='<div class="tit-premio">'+p.titolo+'</div>';
+    bh+='<div class="sot-premio">'+(ok?'tocca per aprire':'completa la zona per sbloccare')+'</div>';
+    bh+='</div>';
+  });
+  bh+='</div>';
+  bac.innerHTML=bh;
+  box.appendChild(bac);
+  box.querySelectorAll('.trofeo').forEach(t=>{
+    t.addEventListener('click',()=>{ const i=+t.getAttribute('data-premio'); if(premioSbloccato(i)) apriPremio(i); });
+  });
+}
+
+// ===== LIVELLO =====
+function apriLivello(id){
+  livelloCorrente=id; curLevel=LEVELS[id-1]; curTargets=(curLevel.targets||[]).length||1;
+  show('#livello');
+  if(musicaOn && tracciaCorrente!==id-1) avviaTraccia(id-1);
+  $('#lv-titolo').textContent=id+'. '+curLevel.nome;
+  $('#lv-zona').textContent=curLevel.zona;
+  $('#lv-brief').innerHTML='<div class="parla"><span class="av">'+gaiaAv(50)+'</span><div><span class="nome-gaia">Gaia</span>'+curLevel.brief+'</div></div>'+
+    '<div class="fact"><strong>Lo sapevi?</strong> '+curLevel.fact+'</div>';
+  const pal=$('#palette'); pal.innerHTML='<span class="eti-pal">comandi disponibili</span>';
+  const nuovi={impara:1, ripeti:1, se:1, traccia:1};
+  curLevel.cmds.forEach(c=>{ const b=document.createElement('button'); b.className='chip-cmd'+(nuovi[c]?' nuovo':''); b.textContent=c; b.addEventListener('click',()=>insTesto(c+' ')); pal.appendChild(b); });
+  editorEl.value=''; aggiornaNumeri(); setFeedback('');
+  $('#btn-sol').style.display = docente ? '' : 'none';
+  buildGarden(startFrame(curLevel));
+}
+function insTesto(t){ const e=editorEl,s=e.selectionStart,en=e.selectionEnd; e.value=e.value.slice(0,s)+t+e.value.slice(en); e.selectionStart=e.selectionEnd=s+t.length; e.focus(); aggiornaNumeri(); }
+function aggiornaNumeri(){ const n=editorEl.value.split('\n').length; let s=''; for(let i=1;i<=Math.max(n,1);i++) s+=i+'\n'; numeriEl.textContent=s; }
+function setFeedback(html,tipo){ const f=$('#feedback'); f.className='feedback'+(tipo?(' '+tipo):''); f.innerHTML=html||''; }
+function righeScritte(){ return editorEl.value.split('\n').filter(l=>l.trim()).length; }
+
+// ===== ESECUZIONE =====
+function esegui(){
+  if(playing) return;
+  const lv=curLevel, src=editorEl.value;
+  let parsed;
+  try{ parsed=ENG.parseProgram(src); }
+  catch(e){ setFeedback('<strong>Riga '+(e.line||'?')+':</strong> '+e.message,'rosso'); buzz(); return; }
+  let st;
+  try{ st=ENG.runProgram(lv, parsed); }
+  catch(e){
+    const frames=e.state && e.state.frames;
+    const msg='<strong>Riga '+(e.line||'?')+':</strong> '+e.message;
+    if(frames && frames.length>1) playFrames(frames, ()=>{ setFeedback(msg,'rosso'); buzz(); });
+    else { buildGarden(startFrame(lv)); setFeedback(msg,'rosso'); buzz(); }
+    return;
+  }
+  if(!st.win){
+    const msg='<strong>Quasi!</strong> Mancano ancora '+st.mancano+' '+(st.mancano===1?'casella da curare':'caselle da curare')+'. Guarda le sagome chiare: sono gli obiettivi da raggiungere.';
+    playFrames(st.frames, ()=>{ setFeedback(msg,'rosso'); buzz(); });
+    return;
+  }
+  const stelle=ENG.stars(lv, st);
+  playFrames(st.frames, ()=>finale(lv, stelle, st));
+}
+function suonoMark(m){
+  if(m==='avanza') passo();
+  else if(m==='gira') giroSuono();
+  else if(m==='pianta') piantaSuono();
+  else if(m==='taglia') tagliaSuono();
+  else if(m==='innaffia') acquaSuono();
+  else if(m==='traccia') tracciaSuono();
+}
+function playFrames(frames, done){
+  playing=true; $('#btn-esegui').disabled=true;
+  buildGarden(frames[0]);
+  const n=frames.length;
+  const dur = n<=6?620:(n<=12?460:(n<=24?340:260));
+  let i=0;
+  function step(){
+    i++;
+    if(i>=frames.length){ playing=false; $('#btn-esegui').disabled=false; done&&done(); return; }
+    const fr=frames[i];
+    drawFrame(fr);
+    suonoMark(fr.mark);
+    setTimeout(step, dur);
+  }
+  setTimeout(step, dur);
+}
+function finale(lv, stelle, st){
+  if(!stelleLivello[lv.id] || stelleLivello[lv.id]<stelle) stelleLivello[lv.id]=stelle;
+  if(lv.id===maxSbloccato && maxSbloccato<16) maxSbloccato++;
+  festeggia(); fanfara();
+  mostraVittoria(lv, stelle, st);
+}
+function mostraVittoria(lv, stelle, st){
+  const sc=$('#scheda-vittoria');
+  let fiori='';
+  for(let i=0;i<3;i++){ const on=i<stelle; fiori+='<svg width="42" height="42" viewBox="0 0 40 40">'+flowerAt(20,16, on?'#E0518A':'#D3DEC6').replace('translate(20,16)','translate(20,18)')+'</svg>'; }
+  const next=lv.id+1;
+  const cod=(next<=16)? codiceDi(next) : null;
+  let frase;
+  if(lv.id===16) frase='Giardino completato, pollice verde! Hai imparato a dare ordini in sequenza, a inventare le tue mosse, a ripeterle e a decidere: questo e\' programmare.';
+  else if(stelle===3) frase='Lavoro perfetto! Neanche un passo di troppo. Sei una vera giardiniera-programmatrice.';
+  else frase='Giardino curato! Prova a rifarlo con meno mosse — magari con una procedura — per i tre fiori d\'oro.';
+  let h='';
+  h+='<h2>'+lv.nome+'</h2>';
+  h+='<div class="stelle-box">'+fiori+'</div>';
+  h+='<div class="parla parla-vittoria"><span class="av">'+gaiaAv(48)+'</span><div><span class="nome-gaia">Gaia</span>'+frase+'</div></div>';
+  h+='<div class="dato-vittoria"><span>Mosse di Gaia</span><strong>'+st.ticks+'</strong></div>';
+  h+='<div class="dato-vittoria"><span>Righe scritte</span><strong>'+righeScritte()+'</strong></div>';
+  h+='<div class="dato-vittoria"><span>Lavoro perfetto (3 fiori)</span><strong>'+lv.par.three+' mosse</strong></div>';
+  h+='<div class="fact"><strong>Lo sapevi?</strong> '+lv.fact+'</div>';
+  if(cod) h+='<div class="codice-vittoria">Codice per il prossimo giardino<div class="parola">'+cod+'</div></div>';
+  else h+='<div class="codice-vittoria">Hai curato tutto il verde!<div class="parola">VERDE</div></div>';
+  const premioIdx=PREMI_SOGLIA.indexOf(lv.id);
+  const premioOk = premioIdx>=0 && premioSbloccato(premioIdx);
+  if(premioOk) h+='<div class="codice-vittoria" style="background:var(--arancio-scuro)">Hai sbloccato un premio!<div class="parola" style="font-size:1.1rem;letter-spacing:.03em">'+PREMI[premioIdx].titolo+'</div></div>';
+  h+='<div class="riga-bottoni"><button class="btn-sec" id="vit-rigioca">Rigioca</button><button class="btn-sec" id="vit-mappa">Il giardino</button>';
+  if(premioOk) h+='<button class="btn-sec" id="vit-premio" style="border-color:var(--oro);color:var(--arancio-scuro)">Apri il premio</button>';
+  if(next<=16) h+='<button class="btn-big" style="margin-top:0;padding:12px 26px" id="vit-next">Prossimo giardino</button>';
+  h+='</div>';
+  sc.innerHTML=h;
+  $('#overlay-vittoria').classList.add('attiva');
+  $('#vit-rigioca').onclick=()=>{ $('#overlay-vittoria').classList.remove('attiva'); apriLivello(lv.id); };
+  $('#vit-mappa').onclick=()=>{ $('#overlay-vittoria').classList.remove('attiva'); buildMappa(); show('#mappa'); };
+  if($('#vit-premio')) $('#vit-premio').onclick=()=>{ $('#overlay-vittoria').classList.remove('attiva'); apriPremio(premioIdx); };
+  if($('#vit-next')) $('#vit-next').onclick=()=>{ $('#overlay-vittoria').classList.remove('attiva'); apriLivello(next); };
+}
+
+// ===== CODICI / DOCENTE =====
+function provaCodice(){
+  const v=$('#input-codice').value.trim().toUpperCase();
+  for(let id=2; id<=16; id++){ if(codiceDi(id)===v){ if(id>maxSbloccato) maxSbloccato=id; buildMappa(); apriLivello(id); $('#input-codice').value=''; return; } }
+  $('#input-codice').value=''; $('#input-codice').placeholder='codice non valido';
+}
+let tapLogo=0, tapTimer=null;
+function tapPalla(){
+  tapLogo++; clearTimeout(tapTimer); tapTimer=setTimeout(()=>tapLogo=0,1200);
+  if(tapLogo>=5){ tapLogo=0; docente=!docente; $('#badge-docente').style.display=docente?'inline-block':'none'; if(docente) maxSbloccato=16; buildMappa(); $('#btn-sol').style.display=(docente && $('#livello').classList.contains('attiva'))?'':'none'; }
+}
+
+// ===== GUIDA =====
+function apriGuida(){
+  $('#scheda-guida').innerHTML='<h2>Come si cura il giardino</h2>'+
+   '<img src="gaia-premio.jpg" class="guida-foto" alt="Gaia pianta un germoglio" onerror="this.style.display=\'none\'">'+
+   '<p>Sei il <strong>giardiniere</strong>: non lavori tu, ma scrivi le mosse che <strong>Gaia</strong> esegue una alla volta. La freccia mostra dove sta guardando. Le <strong>sagome chiare</strong> dicono dove mettere fiori, tagli o righe. Cura tutte le caselle obiettivo per vincere.</p>'+
+   '<h3>I comandi</h3>'+
+   '<div class="codeblock">avanza          fai un passo nella direzione della freccia\ngira destra     gira di un quarto (anche "gira sinistra")\npianta          metti un fiore nella casella\ntaglia          rasa l\'erba della casella\ninnaffia        dai acqua alla casella\ntraccia         dipingi la riga bianca del campo\nripeti 3        ripeti 3 volte (rientra di 2 spazi)\n  avanza\nse vuoto        fai qualcosa solo se... (vuoto/erba/secco/libero)\n  pianta</div>'+
+   '<h3>Le tue mosse · impara</h3>'+
+   '<div class="codeblock">impara passo    inventa una mossa nuova di nome "passo"\n  avanza        (le righe rientrate sono cosa fa la mossa)\n  pianta\npasso           ora richiami "passo" quando vuoi!\npasso</div>'+
+   '<h3>I tre fiori d\'oro</h3>'+
+   '<p>Curare tutto vale almeno un fiore. Per i <strong>tre fiori d\'oro</strong> devi farcela con il <strong>minor numero di mosse</strong>: e\' qui che le tue procedure e i ripeti ti fanno risparmiare. Scrivi meno, ottieni di piu\'!</p>'+
+   '<div class="riga-bottoni"><button class="btn-big" style="margin-top:0;padding:10px 24px" id="chiudi-guida">Ho capito!</button></div>';
+  $('#overlay-guida').classList.add('attiva');
+  $('#chiudi-guida').onclick=()=>$('#overlay-guida').classList.remove('attiva');
+}
+
+// ===== MUSICA =====
+const MUSICHE=['jfKfPfyJRdk','5qap5aO4i9A','DWcJFNfaw9c','lTRiuFIWV54','rUxyKA_-grg','HuFYqnbVbzY'];
+let musicaOn=false, tracciaCorrente=-1, wrapMusica=null;
+function iconaMusica(on){ const c=on?'#2F8F4E':'#FFFFFF'; let s='<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M6.2 14.2 V4.6 L14 3 v9.4" fill="none" stroke="'+c+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="4.4" cy="14.2" rx="2.1" ry="1.7" fill="'+c+'"/><ellipse cx="12.2" cy="12.4" rx="2.1" ry="1.7" fill="'+c+'"/>'; if(!on) s+='<line x1="2" y1="16" x2="16" y2="2" stroke="'+c+'" stroke-width="1.8" stroke-linecap="round"/>'; return s+'</svg>'; }
+function avviaTraccia(n){ if(!wrapMusica){ wrapMusica=document.createElement('div'); wrapMusica.style.cssText='position:fixed;left:-9999px;top:0;width:220px;height:124px;overflow:hidden'; document.body.appendChild(wrapMusica); } const id=MUSICHE[((n%MUSICHE.length)+MUSICHE.length)%MUSICHE.length]; wrapMusica.innerHTML='<iframe width="220" height="124" src="https://www.youtube.com/embed/'+id+'?rel=0&playsinline=1&enablejsapi=1&autoplay=1&loop=1&playlist='+id+'" frameborder="0" allow="autoplay; encrypted-media"></iframe>'; tracciaCorrente=n; }
+function fermaMusica(){ if(wrapMusica) wrapMusica.innerHTML=''; tracciaCorrente=-1; }
+function aggiornaBtnMusica(){ $$('.btn-musica').forEach(b=>{ b.classList.toggle('on',musicaOn); b.innerHTML=iconaMusica(musicaOn); b.title=musicaOn?'musica: accesa':'musica: spenta'; }); }
+function toggleMusica(){ musicaOn=!musicaOn; if(musicaOn){ const inLv=$('#livello').classList.contains('attiva'); avviaTraccia(inLv? livelloCorrente-1 : 0); } else fermaMusica(); aggiornaBtnMusica(); }
+
+// ===== INIT =====
+function init(){
+  $('#splash-av').innerHTML=gaiaAv(58);
+  $('#splash-hero').innerHTML='<img src="gaia-hero.jpg" class="hero-foto" alt="Gaia nel giardino della scuola" onerror="this.outerHTML=window.__verdeScena()">';
+  $('#banner-int').innerHTML='<img src="gaia-banner.jpg" class="banner-foto" alt="Il giardino della scuola" onerror="this.outerHTML=window.__verdeScena()">';
+  $$('.logo-ball').forEach(l=>{ l.innerHTML=logoGaia(); });
+  editorEl=$('#codice'); numeriEl=$('#numeri');
+  editorEl.addEventListener('input',aggiornaNumeri);
+  editorEl.addEventListener('scroll',()=>{ numeriEl.scrollTop=editorEl.scrollTop; });
+  editorEl.addEventListener('keydown',e=>{ if(e.key==='Tab'){ e.preventDefault(); insTesto('  '); } });
+  $('#btn-esegui').addEventListener('click',()=>{ ac(); esegui(); });
+  $('#btn-reset').addEventListener('click',()=>{ editorEl.value=''; aggiornaNumeri(); setFeedback(''); buildGarden(startFrame(curLevel)); });
+  $('#btn-guida').addEventListener('click',apriGuida);
+  $('#btn-sol').addEventListener('click',()=>{ editorEl.value=curLevel.sol; aggiornaNumeri(); });
+  $('#btn-mappa-da-lv').addEventListener('click',()=>{ buildMappa(); show('#mappa'); });
+  $('#btn-premio-mappa').addEventListener('click',()=>{ buildMappa(); show('#mappa'); });
+  $('#btn-gioca').addEventListener('click',()=>{ ac(); buildMappa(); show('#mappa'); });
+  $('#btn-codice').addEventListener('click',provaCodice);
+  $('#input-codice').addEventListener('keydown',e=>{ if(e.key==='Enter') provaCodice(); });
+  $('#logo-ball').addEventListener('click',tapPalla);
+  $('#logo-ball2').addEventListener('click',tapPalla);
+  $('#btn-docente').addEventListener('click',()=>{ location.href='pollice-verde-docenti.html'; });
+  $$('.btn-musica').forEach(b=>b.addEventListener('click',toggleMusica)); aggiornaBtnMusica();
+  const m=location.search.match(/livello=(\d+)/);
+  if(m){ const id=Math.max(1,Math.min(16,+m[1])); maxSbloccato=Math.max(maxSbloccato,id); buildMappa(); apriLivello(id); }
+}
+if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+</body>
+</html>
